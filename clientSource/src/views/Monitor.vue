@@ -9,7 +9,7 @@
           traffic
         </VIcon>
         <VToolbarTitle>
-          Monitor
+          Traffic Monitor
         </VToolbarTitle>
       </VToolbar>
       <VContainer
@@ -22,7 +22,7 @@
           wrap
         >
           <VSlider
-            v-model.number.lazy="uniqueFilterGlobal"
+            v-model.number="filterStrength"
             label="Filter strength"
             max="20"
             min="0"
@@ -32,21 +32,20 @@
             hide-actions
             hide-details
           />
-          <!-- <VSwitch
-            v-model="firstRun"
-            hide-actions
-            label="Clear history"
-            hide-details
-          /> -->
           <VSlider
-            v-model.number.lazy="dataHistory"
+            v-model.number="dataHistory"
             hide-details
             hide-actions
             label="History"
-            max="160"
-            min="5"
+            max="300"
+            min="4"
             step="1"
             thumb-label
+          />
+          <VSwitch
+            v-model="charts"
+            label="Show charts"
+            class="pl-3"
           />
         </VLayout>
       </VContainer>
@@ -54,9 +53,11 @@
         <div
           v-if="selectedSignals.length === 0"
           key="title"
-          class="title font-weight-light grey--text pa-3 text-xs-center"
+          class="title font-weight-light grey--text pa-3 text-xs-center my-4"
         >
-          You have no selected signals at this time.
+          Select frames and signals from the <RouterLink to="/selection">
+            <a>Selection Tree</a>
+          </RouterLink>
         </div>
         <span
           v-for="(selection, i) in selectedSignals"
@@ -68,10 +69,11 @@
           />
           <VChip
             small
-            :color="responseIncludes(selection.name) ? 'success' : ''"
+            :color="responseIncludes(selection.name, selection.namespace) ? 'success' : ''"
             close
             :selected="selection.highlight"
             :label="selection.isParent"
+            class="transitionNone"
             @input="remove(i)"
             @click.stop="highlight(selection.name, i)"
           >
@@ -81,9 +83,7 @@
             v-if="selection.isParent"
             class="caption grey--text"
           > {{ selection.namespace }}</span>
-          <VSpacer
-            v-if="selection.isParent"
-          />
+          <VSpacer v-if="selection.isParent" />
         </span>
       </VCardText>
       <VDivider />
@@ -92,15 +92,24 @@
           row
           wrap
         >
-          <VBtn
-            flat
-            depressed
-            to="selection"
-          >
-            <VIcon>
-              nature
-            </VIcon>
-          </VBtn>
+          <div class="mx-1">
+            <VTooltip bottom>
+              <template v-slot:activator="{on}">
+                <VBtn
+                  flat
+                  color="grey"
+                  depressed
+                  to="selection"
+                  v-on="on"
+                >
+                  <VIcon>
+                    nature
+                  </VIcon>
+                </VBtn>
+              </template>
+              <span>Selection tree</span>
+            </VTooltip>
+          </div>
           <VSpacer />
           <VBtn
             v-if="!subscribed"
@@ -137,6 +146,7 @@
       >
         <template v-slot:item="props">
           <SignalCard
+            v-show="charts"
             :name="props.item.name"
             :data="props.item.data"
             :name-space="props.item.nameSpace"
@@ -150,7 +160,7 @@
             :timestamp="props.item.timestamp"
             :data-history="dataHistory"
             :highlight="props.item.highlight"
-            :unique-filter-global="uniqueFilterGlobal"
+            :unique-filter-global="filterStrength"
           />
         </template>
       </VDataIterator>
@@ -193,7 +203,8 @@
       search: null,
       caseSensitive: false,
       stream: null,
-      dataHistory: 52,
+      charts: false,
+      dataHistory: 0,
       snackbarMessage: 'Not connected',
       snackbarIcon: 'warning',
       snackbarColor: 'error',
@@ -208,9 +219,10 @@
       },
       signalDataList: [],
       firstRun: true,
+      firstRunSubscribed: true,
       chipOnline: [],
       selected: false,
-      uniqueFilterGlobal: 0,
+      filterStrength: 0,
     } },
     computed: {
       connectionStatus: {
@@ -247,12 +259,39 @@
       },
     },
     watch: {
+      subscribed () {
+        if (this.firstRunSubscribed === true) {
+          this.firstRunSubscribed = false
+          setTimeout(() => {
+            this.dataHistory = 36
+          }, 2000);
+          setTimeout(() => {
+            this.charts = true
+          }, 4000);
+          // setTimeout(() => {
+          //   this.filterStrength = 3
+          // }, 8400);
+        }
+      },
+      dataHistory () {
+        const filterValue = this.filterStrength * 5 + 12
+        if (this.dataHistory < 5) {
+          this.filterStrength = 0
+        } else if (this.dataHistory < filterValue) {
+          this.filterStrength = (this.dataHistory - 12) / 5
+        }
+      },
+      filterStrength () {
+        const filterValue = this.filterStrength * 5 + 12
+        if (filterValue > this.dataHistory) {
+          this.dataHistory = filterValue
+        }
+      },
     },
     created () {
     },
     mounted () {
       this.streamSetup()
-      this.filter()
     },
     beforeDestroy () {
       const currentStatus = this.connectionStatus
@@ -260,33 +299,31 @@
       this.connectionStatus = currentStatus
     },
     methods: {
-      highlight(name, index){
+      highlight (name, index) {
         const signal = this.signalDataList.findIndex(element => { return element.name === name })
-        if (signal !== -1){
+        if (signal !== -1) {
           this.signalDataList[signal].highlight = true
           setTimeout(() => {
             this.signalDataList[signal].highlight = false
-          }, 5000);
+          }, 6000);
         }
-        if (index){
+        if (index) {
           this.selectedSignals[index].highlight = true
           setTimeout(() => {
             this.selectedSignals[index].highlight = false
-          }, 5000);
+          }, 6000);
         }
       },
-      filter () { setTimeout(() => {
-        this.uniqueFilterGlobal = 3
-      }, 4000); },
       snackbar (color, snackbarMessage, icon) {
         this.snackbarColor = color
         this.snackbarMessage = snackbarMessage
         this.snackbarIcon = icon || 'warning'
         this.snackbarDisplayed = true
       },
-      responseIncludes (item) {
+      responseIncludes (name, namespace) {
         const findName = this.responseArray.findIndex((element) => {
-          return element === item })
+          return (element.name === name && element.namespace === namespace)
+        })
         if (findName === -1) { return false } else { return true }
       },
       remove (index) {
@@ -315,7 +352,7 @@
         signalIds.setSignalidList(signals)
         // eslint-disable-next-line no-undef
         const clientId = new api.default.ClientId()
-        clientId.setId("my_client")
+        clientId.setId("SBWebClient" + Date.now())
         this.subsConfig.setSignals(signalIds)
         this.subsConfig.setClientid(clientId)
         this.startStream()
@@ -375,11 +412,10 @@
             dataType = 'Empty'
           }
           const name = signal.getId().getName()
-          this.responseArray.push(name)
+          this.responseArray.push({ name: name, namespace: nameSpace })
           const timestamp = signal.getTimestamp()
           streamResult.push({
             name: name,
-            id: nameSpace + name,
             data: { timestamp: timestamp, data: signalData },
             dataType: dataType,
             nameSpace: nameSpace,
@@ -425,5 +461,9 @@
 .monoSpace {
   font-family: "Roboto Mono", monospace;
   font-weight: 400;
+  text-transform: uppercase;
+}
+.transitionNone {
+  transition: none;
 }
 </style>

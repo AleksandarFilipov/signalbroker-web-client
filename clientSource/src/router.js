@@ -45,6 +45,11 @@ export default new Router({
       component: () => { return import(/* webpackChunkName: "sequences" */ './views/Sequences.vue') },
     },
     {
+      path: '/diagnostics',
+      name: 'diagnostics',
+      component: () => { return import(/* webpackChunkName: "diagnostics" */ './views/Diagnostics.vue') },
+    },
+    {
       path: '/test',
       name: 'test',
       component: () => { return import(/* webpackChunkName: "test" */ './views/Test.vue') },

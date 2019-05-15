@@ -8,7 +8,7 @@
         nature
       </VIcon>
       <VToolbarTitle>
-        Signal tree
+        Selection tree
       </VToolbarTitle>
       <VSpacer />
     </VToolbar>
@@ -30,7 +30,7 @@
               <VTextField
                 v-model.trim.lazy="search"
                 :disabled="signalSelectionItems.length === 0"
-                label="Search signals"
+                label="Filter busses, frames and signals"
                 flat
                 hide-details
                 clearable
@@ -38,25 +38,22 @@
                 @focus="collapseTree"
                 @blur="openTree"
               />
-              <VBtn
-                icon
-                :disabled="selectedSignalsLocalLength === 0"
-                flat
-                @click="clear"
-              >
-                <VIcon>
-                  clear_all
-                </VIcon>
-              </VBtn>
-              <VBtn
-                icon
-                flat
-                @click="fetchLists"
-              >
-                <VIcon>
-                  cached
-                </VIcon>
-              </VBtn>
+              <VTooltip bottom>
+                <template v-slot:activator="{on}">
+                  <VBtn
+                    icon
+                    class="mt-3"
+                    flat
+                    v-on="on"
+                    @click="fetchLists"
+                  >
+                    <VIcon>
+                      cached
+                    </VIcon>
+                  </VBtn>
+                </template>
+                <span>Refresh</span>
+              </VTooltip>
             </VLayout>
           </VSheet>
           <VDivider class="hidden-md-and-up" />
@@ -113,7 +110,7 @@
           key="title"
           class="title font-weight-light grey--text pa-3 text-xs-center"
         >
-          Select signals to be analyzed and controlled.
+          Select signals to be analyzed and controlled
         </div>
         <div
           v-else
@@ -154,26 +151,76 @@
         wrap
       >
         <VSpacer />
-        <VBtn
-          :disabled="selectedSignalsChip === selectedSignals"
-          color="success"
-          depressed
-          @click="saveSignalState"
-        >
-          <VIcon>
-            save
-          </VIcon>
-        </VBtn>
-        <VBtn
-          :disabled="selectedSignalsLength === 0"
-          color="info"
-          depressed
-          to="monitor"
-        >
-          <VIcon>
-            traffic
-          </VIcon>
-        </VBtn>
+        <VTooltip bottom>
+          <template v-slot:activator="{on}">
+            <VBtn
+              :disabled="selectedSignalsLocalLength === 0"
+              flat
+              class="mx-1"
+              v-on="on"
+              @click="clear"
+            >
+              <VIcon>
+                clear_all
+              </VIcon>
+            </VBtn>
+          </template>
+          <span>Clear selection</span>
+        </VTooltip>
+        <div class="mx-1">
+          <VTooltip bottom>
+            <template v-slot:activator="{on}">
+              <VBtn
+                :disabled="selectedSignalsChip === selectedSignals"
+                color="success"
+                depressed
+                v-on="on"
+                @click="saveSignalState"
+              >
+                <VIcon>
+                  save
+                </VIcon>
+              </VBtn>
+            </template>
+            <span>Save</span>
+          </VTooltip>
+        </div>
+        <div class="mx-1">
+          <VTooltip bottom>
+            <template v-slot:activator="{on}">
+              <VBtn
+                :disabled="selectedSignalsLength === 0 || selectedSignalsChip !== selectedSignals"
+                color="info"
+                depressed
+                to="monitor"
+                v-on="on"
+              >
+                <VIcon>
+                  traffic
+                </VIcon>
+              </VBtn>
+            </template>
+            <span>Traffic monitor</span>
+          </VTooltip>
+        </div>
+        <div class="mx-1">
+          <VTooltip bottom>
+            <template v-slot:activator="{on}">
+              <VBtn
+                :disabled="selectedSignalsLength === 0 || selectedSignalsChip !== selectedSignals"
+                color="info"
+                depressed
+                to="diagnostics"
+                v-on="on"
+              >
+                <VIcon>
+                  bug_report
+                </VIcon>
+              </VBtn>
+            </template>
+            <span>Diagnostics</span>
+          </VTooltip>
+        </div>
       </VLayout>
     </VCardActions>
     <VSnackbar

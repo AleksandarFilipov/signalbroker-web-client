@@ -33,26 +33,25 @@
           </VListTileAvatar>
           <VListTileContent>
             <VListTileTitle>
-              Signal tree
+              Selection tree
             </VListTileTitle>
             <VListTileSubTitle>
-              Choose what to control
+              Choose traffic to monitor
             </VListTileSubTitle>
           </VListTileContent>
         </VListTile>
         <VListTile
           avatar
           to="/monitor"
-          :disabled="selectedSignals.length === 0"
         >
           <VListTileAvatar>
-            <VIcon :disabled="selectedSignals.length === 0">
+            <VIcon>
               traffic
             </VIcon>
           </VListTileAvatar>
           <VListTileContent>
             <VListTileTitle>
-              Signal Monitor
+              Traffic Monitor
             </VListTileTitle>
             <VListTileSubTitle>
               Observe signal traffic
@@ -60,6 +59,24 @@
           </VListTileContent>
         </VListTile>
         <VListTile
+          avatar
+          to="/diagnostics"
+        >
+          <VListTileAvatar>
+            <VIcon>
+              bug_report
+            </VIcon>
+          </VListTileAvatar>
+          <VListTileContent>
+            <VListTileTitle>
+              Diagnostics
+            </VListTileTitle>
+            <VListTileSubTitle>
+              Query OBD-II PIDs
+            </VListTileSubTitle>
+          </VListTileContent>
+        </VListTile>
+        <!-- <VListTile
           avatar
           to="/sequences"
           disabled
@@ -77,8 +94,8 @@
               Create signal chains
             </VListTileSubTitle>
           </VListTileContent>
-        </VListTile>
-        <VSubheader>
+        </VListTile> -->
+        <!-- <VSubheader>
           Reference
         </VSubheader>
         <VDivider />
@@ -138,7 +155,7 @@
               Event history
             </VListTileSubTitle>
           </VListTileContent>
-        </VListTile>
+        </VListTile> -->
         <VSubheader>
           Settings
         </VSubheader>
@@ -161,7 +178,7 @@
             </VListTileSubTitle>
           </VListTileContent>
         </VListTile>
-        <VListTile
+        <!-- <VListTile
           avatar
           to="/controllers"
           disabled
@@ -197,7 +214,7 @@
               Test the conection
             </VListTileSubTitle>
           </VListTileContent>
-        </VListTile>
+        </VListTile> -->
       </VList>
     </VNavigationDrawer>
     <VToolbar

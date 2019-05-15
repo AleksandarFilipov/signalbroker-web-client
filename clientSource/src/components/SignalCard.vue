@@ -1,7 +1,7 @@
 <template>
-  <VScrollXTransition>
+  <VFadeTransition>
     <VFlex
-      v-show="visible || highlight"
+      v-if="visible || highlight"
       xs12
       sm6
       md4
@@ -51,16 +51,14 @@
           dense
           color="transparent"
         >
-          <VListTile
-            v-if="!isParent"
-          >
+          <VListTile v-if="!isParent">
             <VListTileContent class="grey--text text-uppercase font-weight-black">
               {{ dataType || 'Data type' }}:
             </VListTileContent>
             <VListTileContent class="align-end text-xs-right">
-              <h3 class="monoSpace text-truncate ">
+              <span class="monoSpace text-truncate ">
                 {{ data.data }}
-              </h3>
+              </span>
             </VListTileContent>
           </VListTile>
           <VListTile v-else>
@@ -68,14 +66,14 @@
               Raw:
             </VListTileContent>
             <VListTileContent class="align-end text-xs-right">
-              <h3 class="monoSpace text-truncate text-uppercase">
+              <span class="monoSpace text-truncate text-uppercase">
                 <span
                   v-for="(byte, i) in raw"
                   :key="i"
                 >
                   <span v-if="(rawStringLength(byte) < 2)">0</span>{{ byte | rawStringFilter }}
                 </span>
-              </h3>
+              </span>
             </VListTileContent>
           </VListTile>
         </VList>
@@ -153,19 +151,19 @@
               hide-headers
             >
               <template v-slot:items="props">
-                <tr class="monoSpace text-uppercase">
-                  <td>
+                <tr class="monoSpace text-uppercase grey--text text--lighten-1">
+                  <td class="px-3">
                     {{ props.item.id | toDate }}
                   </td>
                   <td
                     v-if="!isParent"
-                    class="text-xs-right text-truncate"
+                    class="text-xs-right text-truncate px-3 grey--text text--lighten-1"
                   >
                     {{ props.item.data }}
                   </td>
                   <td
                     v-if="isParent && props.item.data.length"
-                    class="text-xs-right text-truncate"
+                    class="text-xs-right text-truncate px-3 grey--text text--lighten-1"
                   >
                     <span
                       v-for="(byte, i) in props.item.data"
@@ -191,6 +189,7 @@
             <VList
               v-if="visible || highlight"
               dense
+              class="grey--text text--lighten-2"
             >
               <VListTile>
                 <VListTileContent>
@@ -247,6 +246,7 @@
           <VCardText
             v-show="showConfiguration"
             class="
+            grey--text text--lighten-2
         pa-0
         ma-0
         "
@@ -325,7 +325,7 @@
                         label="Bar graph"
                         value="bar"
                       />
-                    </vradiogroup>
+                    </VRadioGroup>
                   </VContainer>
                 </VListTileContent>
               </VListTile>
@@ -474,14 +474,14 @@
         </VSlideYTransition>
       </VCard>
     </VFlex>
-  </VScrollXTransition>
+  </VFadeTransition>
 </template>
 <script>
   export default {
     name: 'SignalCard',
     filters: {
       toDate (input) {
-        const date = new Date(input)
+        const date = new Date(input / 1000)
         return date.toLocaleTimeString({}, { hour12: false })
       },
       toString (input) {
@@ -520,9 +520,9 @@
         drawDuration: 100,
         radius: 2,
         padding: 6,
-        dataHistoryLocal: 52,
+        dataHistoryLocal: 2,
         lineWidth: 2.2,
-        chartHeight: 100,
+        chartHeight: 64,
         chartType: 'trend',
         typeOptions: ['trend', 'bar'],
         chartDataValueArray: [],
@@ -531,7 +531,7 @@
         isParent: false,
         isBinary: false,
         autoLineWidth: false,
-        uniqueFilter: 3,
+        uniqueFilter: 0,
       }
     },
     computed: {
@@ -548,14 +548,14 @@
         return new Set(this.chartDataValueArray)
       },
       visible () {
-        if (this.dataSetLength < this.uniqueFilter && this.dataHistoryLocal > 9) {
+        if (this.dataSetLength < this.uniqueFilter && this.uniqueFilter > 1 && this.dataLength > 1) {
           return false
         } else {
           return true }
       },
     },
     watch: {
-      uniqueFilterGlobal(){
+      uniqueFilterGlobal () {
         this.uniqueFilter = this.uniqueFilterGlobal
       },
       data () {
@@ -574,25 +574,22 @@
             this.entryLog.splice(0, difference)
           }
         }
-        if (this.dataLength > 86 && this.isBinary) {
+        if (this.dataLength > 86 && this.isBinary && this.dataSetLength > 3) {
           this.fill = true
         } else if (this.dataLength < 87) {
           this.fill = false
         }
-        if (this.dataSetLength < 4) {
-          if (!this.isBinary && this.dataLength < 60) {
-            this.isBinary = true
-            this.setBar()
-          } else {
-            if (this.chartType !== this.typeOptions[0]) {
-              this.setLine()
-            }
-          }
+        if (!this.isBinary && this.dataLength < 60 && this.chartType !== this.typeOptions[2]) {
+          this.isBinary = true
+          this.setBar()
         } else {
-          if (!this.isBinary && this.dataLength < 90) {
-            this.isBinary = false
+          if (this.chartType !== this.typeOptions[0] && !this.isParent) {
             this.setLine()
           }
+        }
+        if (!this.isBinary && this.dataLength < 90) {
+          this.isBinary = false
+          this.setLine()
         }
       },
       dataHistory () {
@@ -620,9 +617,10 @@
     },
     created () {
       this.chartDataValueArray = new Array(this.dataHistoryLocal)
+      // this.chartDataValueArray = new Array(1)
       this.chartDataValueArray.fill(0)
-      this.entryLog = new Array()
-      // this.entryLog.fill({ id: 0, data: 0 })
+      this.entryLog = new Array(this.dataHistoryLocal)
+      this.entryLog.fill({ id: 0, data: 0 })
     },
     methods: {
       setBar () {
