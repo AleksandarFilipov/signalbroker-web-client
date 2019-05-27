@@ -10,6 +10,7 @@ export default new Vuex.Store({
     // brokerServerIp: 'http://10.251.183.250:8081',
     connectionStatus: '',
     search: '',
+    childMessagesPerSecond: 30,
     title: 'Signal Broker',
     dark: true,
     toolbar: {
@@ -90,6 +91,9 @@ export default new Vuex.Store({
     },
     updateFooterFloating (state, value) {
       state.footer.floating = value
+    },
+    updateChildMessagesPerSecond (state, value) {
+      state.childMessagesPerSecond = value
     },
   },
   actions: {

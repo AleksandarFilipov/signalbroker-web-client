@@ -24,7 +24,7 @@
           <VSlider
             v-model.number="filterStrength"
             label="Filter strength"
-            max="20"
+            max="12"
             min="0"
             step="1"
             thumb-label
@@ -37,27 +37,34 @@
             hide-details
             hide-actions
             label="History"
-            max="300"
-            min="4"
-            step="1"
+            max="4000"
+            min="100"
+            step="100"
             thumb-label
           />
           <VSwitch
             v-model="charts"
             label="Show charts"
             class="pl-3"
+            @change="childMessagesPerSecond = 30"
           />
         </VLayout>
       </VContainer>
       <VCardText class="overflowY py-3">
         <div
           v-if="selectedSignals.length === 0"
-          key="title"
           class="title font-weight-light grey--text pa-3 text-xs-center my-4"
         >
-          Select frames and signals from the <RouterLink to="/selection">
-            <a>Selection Tree</a>
-          </RouterLink>
+          You have no selected signals at this time<br>
+          <VBtn
+            to="/selection"
+            flat
+            depressed
+          >
+            <VIcon left>
+              nature
+            </VIcon> Selection Tree
+          </VBtn>
         </div>
         <span
           v-for="(selection, i) in selectedSignals"
@@ -112,6 +119,13 @@
           </div>
           <VSpacer />
           <VBtn
+            disabled
+            flat
+            class="monoSpace"
+          >
+            Messages/second: {{ messagesPerSecondCache | padNumber }}
+          </VBtn>
+          <VBtn
             v-if="!subscribed"
             :disabled="selectedSignals.length === 0"
             color="green"
@@ -141,26 +155,21 @@
         hide-actions
         :items="signalDataList"
         content-class="layout row wrap"
-        item-key="id"
-        :rows-per-page-items="rowsPerPageItems"
+        item-key="name"
+        :pagination.sync="pagination"
       >
         <template v-slot:item="props">
-          <SignalCard
-            v-show="charts"
+          <SignalCardBuffered
+            v-if="charts || props.item.highlight"
             :name="props.item.name"
-            :data="props.item.data"
-            :name-space="props.item.nameSpace"
+            :data-records="props.item.dataRecords"
             :data-type="props.item.dataType"
-            :min="props.item.min"
-            :max="props.item.max"
-            :unit="props.item.unit"
-            :size="props.item.size"
-            :raw="props.item.raw"
-            :description="props.item.description"
-            :timestamp="props.item.timestamp"
-            :data-history="dataHistory"
+            :name-space="props.item.nameSpace"
             :highlight="props.item.highlight"
+            :data-history="dataHistory"
             :unique-filter-global="filterStrength"
+            :raw-data="props.item.rawData"
+            :is-parent="props.item.isParent"
           />
         </template>
       </VDataIterator>
@@ -191,11 +200,29 @@
 </template>
 <script>
   import './../grpc/dist/api.js'
-  import SignalCard from "./../components/SignalCard.vue"
+  import SignalCardBuffered from "./../components/SignalCardBuffered.vue"
   export default {
     name: "Monitor",
-    components: { SignalCard },
+    components: { SignalCardBuffered },
+    filters: {
+      padNumber (input) {
+        const length = input.toString().length
+        if (length === 1) {
+          return "00" + input
+        } else if (length === 2) {
+          return "0" + input
+        } else if (length === 0) {
+          return "000"
+        } else {
+          return input
+        }
+      },
+    },
     data: () => { return {
+      pagination: {
+        sortBy: 'name',
+        descending: true,
+      },
       snackbarDisplayed: false,
       chipValue: [],
       subscribed: false,
@@ -211,20 +238,29 @@
       NetworkService: null,
       subsConfig: null,
       responseArray: [],
-      rowsPerPageItems: [6, 12, 24, -1],
-      pagination: {
-        rowsPerPage: -1, // infinite rows per page
-        descending: false, // sorting order
-        sortBy: "id", // sort field for pagination
-      },
       signalDataList: [],
+      signalDataListBuffer: [],
       firstRun: true,
       firstRunSubscribed: true,
       chipOnline: [],
       selected: false,
       filterStrength: 0,
+      deltaTime: null,
+      messagesPerSecond: 0,
+      messagesPerSecondCache: 0,
+      responseArrayBuffer: [],
+      deltaTimeProcessBuffer: null,
+      clientName: "SBWebClient" + Date.now(),
     } },
     computed: {
+      childMessagesPerSecond: {
+        get () {
+          return this.$store.state.childMessagesPerSecond
+        },
+        set (value) {
+          this.$store.commit('updateChildMessagesPerSecond', value)
+        },
+      },
       connectionStatus: {
         get () {
           return this.$store.state.connectionStatus
@@ -249,40 +285,42 @@
           this.$store.commit('updateSelectedSignals', value)
         },
       },
-      requestHistory: {
-        get () {
-          return this.$store.state.requestHistory
-        },
-        set (value) {
-          this.$store.commit('updateRequestHistory', value)
-        },
-      },
     },
     watch: {
       subscribed () {
         if (this.firstRunSubscribed === true) {
           this.firstRunSubscribed = false
           setTimeout(() => {
-            this.dataHistory = 36
-          }, 2000);
+            this.dataHistory = 500
+          }, 100);
           setTimeout(() => {
             this.charts = true
-          }, 4000);
-          // setTimeout(() => {
-          //   this.filterStrength = 3
-          // }, 8400);
+          }, 100);
+          setTimeout(() => {
+            this.filterStrength = 2
+          }, 2000);
         }
       },
+      charts () {
+        const cachedFilter = this.filterStrength
+        this.filterStrength = 0
+        const cachedHistory = this.dataHistory
+        this.dataHistory = 0
+        setTimeout(() => {
+          this.filterStrength = cachedFilter
+          this.dataHistory = cachedHistory
+        }, 100);
+      },
       dataHistory () {
-        const filterValue = this.filterStrength * 5 + 12
+        const filterValue = this.filterStrength * 5 + 10
         if (this.dataHistory < 5) {
           this.filterStrength = 0
         } else if (this.dataHistory < filterValue) {
-          this.filterStrength = (this.dataHistory - 12) / 5
+          this.filterStrength = (this.dataHistory - 10) / 5
         }
       },
       filterStrength () {
-        const filterValue = this.filterStrength * 5 + 12
+        const filterValue = this.filterStrength * 5 + 10
         if (filterValue > this.dataHistory) {
           this.dataHistory = filterValue
         }
@@ -292,6 +330,7 @@
     },
     mounted () {
       this.streamSetup()
+      this.deltaTime = Date.now()
     },
     beforeDestroy () {
       const currentStatus = this.connectionStatus
@@ -321,10 +360,12 @@
         this.snackbarDisplayed = true
       },
       responseIncludes (name, namespace) {
-        const findName = this.responseArray.findIndex((element) => {
-          return (element.name === name && element.namespace === namespace)
-        })
-        if (findName === -1) { return false } else { return true }
+        if (!this.charts) {
+          const findName = this.responseArray.findIndex((element) => {
+            return (element.name === name && element.namespace === namespace)
+          })
+          if (findName === -1) { return false } else { return true }
+        } else return false
       },
       remove (index) {
         this.stopStream()
@@ -336,6 +377,7 @@
         return this.signalDataList.map(item => { return item.name })
       },
       streamSetup () {
+        this.childMessagesPerSecond = 30
         // eslint-disable-next-line no-undef
         this.NetworkService = new api.default.NetworkServiceClient(this.brokerServerIp)
         // eslint-disable-next-line no-undef
@@ -352,7 +394,7 @@
         signalIds.setSignalidList(signals)
         // eslint-disable-next-line no-undef
         const clientId = new api.default.ClientId()
-        clientId.setId("SBWebClient" + Date.now())
+        clientId.setId(this.clientName)
         this.subsConfig.setSignals(signalIds)
         this.subsConfig.setClientid(clientId)
         this.startStream()
@@ -360,7 +402,10 @@
       startStream () {
         this.stream = this.NetworkService.subscribeToSignals(this.subsConfig)
         this.stream.on('data', response => {
-          this.streamResponse(response)
+          this.subscribed = true;
+          this.responseArrayBuffer.push(response)
+          this.countMessagesPerSecond()
+          this.processBuffer()
           //  this.snackbar('success', "Connected", 'check')
           if (this.connectionStatus !== 'success--text') {
             this.connectionStatus = 'success--text'
@@ -378,7 +423,7 @@
           //  this.snackbar('error', error.message, 'warning')
           this.connectionStatus = 'error--text'
         })
-        this.$store.commit('updateRequestHistory', this.requestHistory)
+        // this.$store.commit('updateRequestHistory', this.requestHistory)
       },
       stopStream () {
         this.request = 'Cancel Subscription';
@@ -386,18 +431,60 @@
           this.stream.cancel()
         }
         this.subscribed = false;
-        this.$store.commit('updateRequestHistory', this.requestHistory)
+        // this.$store.commit('updateRequestHistory', this.requestHistory)
       },
-      streamResponse (response) {
-        this.subscribed = true;
+      countMessagesPerSecond () {
+        const now = Date.now()
+        if (this.deltaTime + 1000 < now) {
+          this.deltaTime = now
+          this.messagesPerSecondCache = this.messagesPerSecond
+          this.messagesPerSecond = 0
+        }
+        this.messagesPerSecond += 1
+      },
+      processBuffer () {
+        const now = Date.now()
+        if (this.deltaTimeProcessBuffer + (1000 / this.childMessagesPerSecond) < now) {
+          this.deltaTimeProcessBuffer = now
+          this.responseArrayBuffer.forEach(cachedResponses => {
+            this.processCachedResponses(cachedResponses)
+          })
+          this.responseArrayBuffer = []
+          this.signalDataList = this.signalDataListBuffer.slice(0)
+          this.signalDataListBuffer = []
+        }
+      },
+      processCachedResponses (response) {
         const signalList = response.getSignalList()
-        let streamResult = []
+        if (!this.charts) {
+          this.activityMonitor(signalList)
+        } else {
+          this.createSignalList(signalList)
+        }
+        if (this.firstRun) {
+          this.firstRun = false
+        }
+      },
+      activityMonitor (signalList) {
         this.responseArray = []
         signalList.forEach(signal => {
-          let signalData = ''
-          let dataType = ''
+          const name = signal.getId().getName()
           const nameSpace = signal.getId().getNamespace()
             .getName()
+          this.responseArray.push({ name: name, namespace: nameSpace })
+        })
+      },
+      createSignalList (signalList) {
+        signalList.forEach(signal => {
+          const name = signal.getId().getName()
+          const nameSpace = signal.getId().getNamespace()
+            .getName()
+          const index = this.signalDataListBuffer.findIndex(signalElement => { return signalElement.name === name && signalElement.nameSpace === nameSpace })
+          let signalData = ''
+          let rawData
+          let dataType = ''
+          let isParent = false
+          rawData = signal.getRaw_asU8()
           if (signal.hasDouble()) {
             signalData = signal.getDouble()
             dataType = 'Double'
@@ -411,39 +498,30 @@
             signalData = signal.getEmpty()
             dataType = 'Empty'
           }
-          const name = signal.getId().getName()
-          this.responseArray.push({ name: name, namespace: nameSpace })
+          if (rawData.length > 7) {
+            dataType = 'RAW'
+            isParent = true
+          }
           const timestamp = signal.getTimestamp()
-          streamResult.push({
+          const newElement = {
             name: name,
-            data: { timestamp: timestamp, data: signalData },
+            dataRecords: [{ timestamp: timestamp, data: signalData }],
             dataType: dataType,
             nameSpace: nameSpace,
-            unit: signal.unit,
-            max: signal.max,
-            min: signal.min,
-            size: signal.size,
-            raw: signal.getRaw(),
             highlight: false,
-          })
+            rawData: [{ timestamp: timestamp, data: rawData }],
+            isParent: isParent,
+          }
+          if (index !== -1) { // if the element is found, then push new data records, else push the new element
+            let dataListItem = this.signalDataListBuffer[index]
+            dataListItem.dataRecords.push({ timestamp: timestamp, data: signalData })
+            dataListItem.rawData.push({ timestamp: timestamp, data: rawData })
+            dataListItem.isParent = isParent
+            dataListItem.name = name
+          } else {
+            this.signalDataListBuffer.push(newElement)
+          }
         });
-        if (!this.firstRun) {
-          streamResult.forEach((streamElement) => {
-            const index = this.signalDataList.findIndex(element => { return element.name === streamElement.name })
-            if (index !== -1) {
-              if (this.signalDataList[index].nameSpace !== undefined) {
-                this.signalDataList[index].data = streamElement.data
-                this.signalDataList[index].raw = streamElement.raw
-              } else {
-                this.signalDataList[index] = streamElement } }
-            else {
-              this.signalDataList.push(streamElement)
-            }
-          })
-        } else {
-          this.signalDataList = streamResult
-          this.firstRun = false
-        }
       },
     },
   }

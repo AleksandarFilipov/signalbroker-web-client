@@ -110,7 +110,7 @@
           key="title"
           class="title font-weight-light grey--text pa-3 text-xs-center"
         >
-          Select signals to be analyzed and controlled
+          Select signals/frames to be analyzed and controlled
         </div>
         <div
           v-else
@@ -171,7 +171,7 @@
           <VTooltip bottom>
             <template v-slot:activator="{on}">
               <VBtn
-                :disabled="selectedSignalsChip === selectedSignals"
+                :disabled="selectedSignalsChip === selectedSignals || signalSelectionItems.length === 0"
                 color="success"
                 depressed
                 v-on="on"

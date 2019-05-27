@@ -17,17 +17,16 @@
           v-if="selectedSignals.length === 0"
           class="title font-weight-light grey--text pa-3 text-xs-center my-4"
         >
-          You have no selected signals at this time. Select an Uplink followed by a Downlink <br>
-          <RouterLink to="/selection">
-            <VBtn
-              flat
-              depressed
-            >
-              <VIcon left>
-                nature
-              </VIcon> Selection Tree
-            </VBtn>
-          </RouterLink>
+          You have no selected frames at this time. Select an Uplink followed by a Downlink <br>
+          <VBtn
+            flat
+            to="/selection"
+            depressed
+          >
+            <VIcon left>
+              nature
+            </VIcon> Selection Tree
+          </VBtn>
         </div>
         <VLayout
           v-if="selectedSignals.length > 0"
@@ -67,7 +66,7 @@
               </RouterLink>
             </div>
           </VFlex>
-          <div
+          <VFlex
             v-if="selectedSignals.length === 1"
             class="title font-weight-light grey--text pa-3 my-4"
           >
@@ -82,7 +81,7 @@
                 </VIcon> Selection Tree
               </VBtn>
             </RouterLink>
-          </div>
+          </VFlex>
           <VFlex
             v-if="selectedSignals.length > 1"
             class="my-3"
@@ -136,6 +135,13 @@
             label="Service ID"
           />
           <VTextField
+            v-if="hexDec === 'bin'"
+            v-model.number.lazy="service"
+            class="mt-0 ml-3 shrink monoSpace"
+            type="number"
+            label="Service ID"
+          />
+          <VTextField
             v-if="hexDec === 'hex'"
             v-model.lazy="serviceConvert"
             class="mt-0 ml-3 shrink monoSpace"
@@ -158,7 +164,21 @@
             label="PID1 Min"
           />
           <VTextField
+            v-if="hexDec === 'bin'"
+            v-model.number.lazy="pid[0]"
+            class="mt-0 ml-3 shrink monoSpace"
+            type="number"
+            label="PID1 Min"
+          />
+          <VTextField
             v-if="hexDec === 'dec'"
+            v-model.number.lazy="pid[1]"
+            class="mt-0 ml-3 shrink monoSpace"
+            type="number"
+            label="PID1 Max"
+          />
+          <VTextField
+            v-if="hexDec === 'bin'"
             v-model.number.lazy="pid[1]"
             class="mt-0 ml-3 shrink monoSpace"
             type="number"
@@ -194,6 +214,13 @@
             label="PID2"
           />
           <VTextField
+            v-if="hexDec === 'bin'"
+            v-model.number="pid2"
+            class="mt-0 ml-3 shrink monoSpace"
+            type="number"
+            label="PID2"
+          />
+          <VTextField
             v-if="hexDec === 'hex'"
             v-model.lazy="pid2Convert"
             class="mt-0 ml-3 shrink monoSpace"
@@ -216,6 +243,10 @@
             <VRadio
               label="Decimal"
               value="dec"
+            />
+            <VRadio
+              label="Binary"
+              value="bin"
             />
           </VRadioGroup>
           <VSwitch
@@ -270,10 +301,17 @@
           </div>
           <VBtn
             depressed
-            color="success"
-            @click="scanObd"
+            :disabled="selectedSignals.length < 2"
+            :color="scanning ? 'error' : 'success'"
+            @click="conditionallyScan"
           >
-            OBD Scan
+            <VProgressCircular
+              v-show="scanning"
+              :value="scanProgress"
+              size="24"
+            />
+            <span v-show="!scanning">
+              OBD Scan</span>
           </VBtn>
         </VLayout>
       </VCardActions>
@@ -305,10 +343,14 @@
       :items="scanResults"
       hide-actions
       item-key="date"
+      :pagination.sync="pagination"
       class="mt-4 elevation-2"
     >
       <template v-slot:items="props">
-        <tr @click="props.expanded = !props.expanded">
+        <tr
+          class="pointerCursor"
+          @click="props.expanded = !props.expanded"
+        >
           <td>
             {{ props.item.date | toDate }}
           </td>
@@ -319,10 +361,13 @@
                 :key="i"
               >
                 <span v-if="hexDec === 'hex'">
-                  <span v-if=" (rawStringLength(byte) < 2)">0</span>{{ byte | rawStringFilter }}
+                  {{ byte | rawStringFilter }}
                 </span>
                 <span v-if="hexDec === 'dec'">
-                  <span v-if="byte < 10">00</span><span v-else-if="byte < 100">0</span>{{ byte }}
+                  {{ byte | decimalPad }}
+                </span>
+                <span v-if="hexDec === 'bin'">
+                  {{ byte | decimalPad }}
                 </span>
               </span>
             </span>
@@ -334,10 +379,13 @@
                 :key="i"
               >
                 <span v-if="hexDec === 'hex'">
-                  <span v-if=" (rawStringLength(byte) < 2)">0</span>{{ byte | rawStringFilter }}
+                  {{ byte | rawStringFilter }}
                 </span>
                 <span v-if="hexDec === 'dec'">
-                  <span v-if="byte < 10">00</span><span v-else-if="byte < 100">0</span>{{ byte }}
+                  {{ byte | decimalPad }}
+                </span>
+                <span v-if="hexDec === 'bin'">
+                  {{ byte | decimalPad }}
                 </span>
               </span>
             </span>
@@ -348,14 +396,14 @@
                 v-for="(byte, i) in props.item.data"
                 :key="i"
               >
-                <span
-                  v-if="hexDec === 'hex'"
-                  class="monoSpace"
-                >
-                  <span v-if=" (rawStringLength(byte) < 2)">0</span>{{ byte | rawStringFilter }}
+                <span v-if="hexDec === 'hex'">
+                  {{ byte | rawStringFilter }}
                 </span>
                 <span v-if="hexDec === 'dec'">
-                  <span v-if="byte < 10">00</span><span v-else-if="byte < 100">0</span>{{ byte }}
+                  {{ byte | decimalPad }}
+                </span>
+                <span v-if="hexDec === 'bin'">
+                  {{ byte | dec2bin }}
                 </span>
               </span>
             </span>
@@ -417,18 +465,61 @@
     name: "Diagnostic",
     filters: {
       rawStringFilter (input) {
-        return input.toString(16)
+        return input.toString(16).padStart(2, "0");
+      },
+      decimalPad (input) {
+        return input.toString().padStart(3, "0");
       },
       toDate (input) {
         const date = new Date(input)
         return date.toLocaleTimeString({}, { hour12: false })
       },
+      // decimal to binary
+      dec2bin (num) {
+        function convertBase (num) {
+          return {
+            from: function (baseFrom) {
+              return {
+                to: function (baseTo) {
+                  return parseInt(num, baseFrom).toString(baseTo)
+                    .padStart(8, "0");
+                },
+              }
+            },
+          }
+        }
+        return convertBase(num).from(10)
+          .to(2);
+      },
+      // hexadecimal to binary
+      hex2bin (num) {
+        function convertBase (num) {
+          return {
+            from: function (baseFrom) {
+              return {
+                to: function (baseTo) {
+                  return parseInt(num, baseFrom).toString(baseTo);
+                },
+              }
+            },
+          }
+        }
+        return convertBase(num).from(16)
+          .to(2);
+      },
     },
     data: () => { return {
       snackbarDisplayed: false,
+      pagination: {
+        sortBy: 'date',
+        descending: true,
+        rowsPerPage: -1,
+      },
       service: 1,
-      pid: [0, 24],
+      pid: [0, 18],
       pid2: -1,
+      scanProgress: 0,
+      scanning: false,
       chipValue: [],
       showEmptyResults: true,
       subscribed: false,
@@ -453,18 +544,21 @@
           value: 'date',
           align: 'left',
           sortable: true,
+          width: 120,
         },
         {
           text: 'Service ID',
           value: 'serviceId',
           align: 'left',
           sortable: true,
+          width: 120,
         },
         {
           text: 'PID',
           value: 'pIdHex',
           align: 'left',
           sortable: true,
+          width: 120,
         },
         {
           text: 'Raw Response Data',
@@ -488,6 +582,11 @@
         set (value) {
           const converted = parseInt(value)
           this.service = converted
+        },
+      },
+      pidDifference: {
+        get () {
+          return this.pid[1] - this.pid[0]
         },
       },
       pid1MinConvert: {
@@ -595,6 +694,20 @@
       this.connectionStatus = currentStatus
     },
     methods: {
+      conditionallyScan () {
+        this.scanning === true ? this.scanning = false : this.scanObd()
+      },
+      convertBase (num) {
+        return {
+          from: function (baseFrom) {
+            return {
+              to: function (baseTo) {
+                return parseInt(num, baseFrom).toString(baseTo);
+              },
+            }
+          },
+        }
+      },
       remove (index) {
         this.selectedSignals.splice(index, 1)
       },
@@ -607,27 +720,11 @@
         this.snackbarIcon = icon || 'warning'
         this.snackbarDisplayed = true
       },
-      queryObdInteractive () {
-        this.request = 'Query OBD'
-        const signals = [];
-        this.selectedSignals.forEach(signal => {
-          if (signal.signalId) {
-            signals.push(signal.signalId)
-          }
-        })
-        // eslint-disable-next-line no-undef
-        const request = new api.default.DiagnosticsRequest()
-        request.setDownlink(signals[0])
-        request.setUplink(signals[1])
-        const serviceId = new Uint8Array(1)
-        serviceId[0] = 0x01
-        request.setServiceid(serviceId)
-        const dataId = new Uint8Array(1)
-        dataId[0] = 0x42
-        request.setDataidentifier(dataId)
-        this.diagnosticsRequest(request)
-      },
       scanObd () {
+        this.scanProgress = 0
+        const progressChunk = 100 / this.pidDifference
+        let progressMultiplier = 0
+        this.scanning = true
         for (let scanPidIndex = this.pid[0]; scanPidIndex < this.pid[1]; scanPidIndex += 1) {
           this.request = 'OBD Scan'
           // eslint-disable-next-line no-undef
@@ -658,8 +755,19 @@
             }
             request.setDataidentifier(dataId)
           }
-          this.diagnosticsRequest(request)
+          setTimeout(() => {
+            if (this.pidDifference < 5 || this.scanning === true) {
+              progressMultiplier += 1
+              this.scanProgress = progressChunk * progressMultiplier
+              this.diagnosticsRequest(request)
+            }
+          }, 200 * scanPidIndex);
         }
+        setTimeout(() => {
+          if (this.scanning === true) {
+            this.scanning = false
+          }
+        }, (200 * this.pidDifference) + 800);
       },
       diagnosticsRequest (request) {
         // eslint-disable-next-line no-undef
@@ -734,5 +842,8 @@
   font-family: "Roboto Mono", monospace;
   font-weight: 400;
   text-transform: uppercase;
+}
+.pointerCursor {
+  cursor: pointer;
 }
 </style>

@@ -253,14 +253,14 @@ const services = () => {
 			'?',
 			'?',
 		],
-		[], // Service 2
+		['', '', 'DTC that caused freeze frame to be stored'], // Service 2
 		[], // Service 3
 		[], // Service 4
 		[], // Service 5
 		[], // Service 6
 		[], // Service 7
 		[], // Service 8
-		[
+		[ // Service 9
 			'Service 9 supported PIDs [01 - 20]',
 			'VIN Message Count in PID 02',
 			'Vehicle Identification Number (VIN)',

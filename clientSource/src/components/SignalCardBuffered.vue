@@ -3,9 +3,10 @@
     <VFlex
       v-if="visible || highlight"
       xs12
-      sm6
-      md4
-      lg3
+      sm12
+      md12
+      lg6
+      xl4
     >
       <VCard>
         <VCardTitle>
@@ -57,7 +58,7 @@
             </VListTileContent>
             <VListTileContent class="align-end text-xs-right">
               <span class="monoSpace text-truncate ">
-                {{ dataCache }}
+                {{ chartDataValueArrayCache[chartDataValueArrayCache.length - 1] }}
               </span>
             </VListTileContent>
           </VListTile>
@@ -68,10 +69,10 @@
             <VListTileContent class="align-end text-xs-right">
               <span class="monoSpace text-truncate text-uppercase">
                 <span
-                  v-for="(byte, i) in rawCache"
+                  v-for="(byte, i) in lastRawEntry"
                   :key="i"
                 >
-                  <span v-if="(rawStringLength(byte) < 2)">0</span>{{ byte | rawStringFilter }}
+                  {{ byte | rawStringFilter }}
                 </span>
               </span>
             </VListTileContent>
@@ -152,7 +153,7 @@
               <template v-slot:items="props">
                 <tr class="monoSpace text-uppercase grey--text text--lighten-1">
                   <td class="px-3">
-                    {{ props.item.id | toDate }}
+                    {{ props.item.timestamp | toDate }}
                   </td>
                   <td
                     v-if="!isParent"
@@ -168,7 +169,7 @@
                       v-for="(byte, i) in props.item.data"
                       :key="i"
                     >
-                      <span v-if="(rawStringLength(byte) < 2)">0</span>{{ byte | rawStringFilter }}
+                      {{ byte | rawStringFilter }}
                     </span>
                   </td>
                 </tr>
@@ -206,20 +207,21 @@
                   {{ cacheDelay }} FPS
                 </VListTileContent>
               </VListTile>
-              <VListTile v-if="!isParent && description">
-                <VListTileContent>
-                  Description:
-                </VListTileContent>
-                <VListTileContent class="align-end">
-                  {{ description }}
-                </VListTileContent>
-              </VListTile>
               <VListTile>
                 <VListTileContent>
                   Bus:
                 </VListTileContent>
                 <VListTileContent class="align-end">
                   {{ nameSpace }}
+                </VListTileContent>
+              </VListTile>
+              <!--
+              <VListTile v-if="!isParent && description">
+                <VListTileContent>
+                  Description:
+                </VListTileContent>
+                <VListTileContent class="align-end">
+                  {{ description }}
                 </VListTileContent>
               </VListTile>
               <VListTile v-if="!isParent && min">
@@ -253,7 +255,7 @@
                 <VListTileContent class="align-end">
                   {{ size }}
                 </VListTileContent>
-              </VListTile>
+              </VListTile> -->
             </VList>
           </VCardText>
         </VSlideYTransition>
@@ -307,9 +309,9 @@
                           hide-actions
                           hide-details
                           label="History"
-                          max="800"
-                          min="2"
-                          step="1"
+                          max="12000"
+                          min="100"
+                          step="100"
                         />
                       </VFlex>
                       <VFlex
@@ -354,8 +356,8 @@
                           hide-actions
                           hide-details
                           label="Line width"
-                          max="32"
-                          min="0.1"
+                          max="4"
+                          min="0.01"
                           step="0.01"
                         />
                       </VFlex>
@@ -380,7 +382,7 @@
                           hide-actions
                           hide-details
                           label="Smoothing"
-                          max="10"
+                          max="3"
                           min="0"
                           step="0.01"
                         />
@@ -406,7 +408,7 @@
                           hide-actions
                           hide-details
                           label="Padding"
-                          max="32"
+                          max="8"
                           min="0"
                           step="0.01"
                         />
@@ -493,7 +495,7 @@
 </template>
 <script>
   export default {
-    name: 'SignalCard',
+    name: 'SignalCardBuffered',
     filters: {
       toDate (input) {
         const date = new Date(input / 1000)
@@ -503,43 +505,30 @@
         return input.toString()
       },
       rawStringFilter (input) {
-        return input.toString(16)
+        return input.toString(16).padStart(2, "0");
       },
       padNumber (input) {
-        const length = input.toString().length
-        if (length === 1) {
-          return "00" + input
-        } else if (length === 2) {
-          return "0" + input
-        } else if (length === 0) {
-          return "000"
-        } else {
-          return input
-        }
+        return input.toString().padStart(3, "0");
       },
     },
     props: {
       name: { type: String, default: null },
+      dataRecords: { type: Array, default: null },
+      rawData: { type: Array, default: null },
       dataType: { type: String, default: null },
       nameSpace: { type: String, default: null },
-      unit: { type: String, default: null },
-      description: { type: String, default: null },
-      data: { type: Object, default: null, required: true },
-      dataHistory: { type: Number, default: null },
-      min: { type: Number, default: null },
-      max: { type: Number, default: null },
-      size: { type: Number, default: null },
-      uniqueFilterGlobal: { type: Number, default: null },
-      raw: { type: [String, Uint8Array], default: null },
       highlight: { type: Boolean },
+      dataHistory: { type: Number, default: null },
+      uniqueFilterGlobal: { type: Number, default: null },
+      isParent: { type: Boolean },
     },
     data () {
       return {
         pagination: {
-          sortBy: 'id',
+          sortBy: 'timestamp',
           descending: true,
         },
-        cacheDelay: 6,
+        cacheDelay: 8,
         showAdditionalInfo: false,
         showConfiguration: false,
         entryLog: [],
@@ -548,29 +537,29 @@
         showLog: false,
         animate: false,
         drawDuration: 100,
-        radius: 2,
-        padding: 6,
+        enableAdaptiveCharting: true,
+        radius: 0.2,
+        padding: 1,
         dataHistoryLocal: 2,
-        lineWidth: 2,
-        chartHeight: 64,
-        chartType: 'trend',
+        lineWidth: 0.8,
+        chartHeight: 48,
+        chartType: 'bar',
         typeOptions: ['trend', 'bar'],
         chartDataValueArray: [],
         chartDataValueArrayCache: [],
         fill: false,
         lastUpdate: '',
-        isParent: false,
         isBinary: false,
         autoLineWidth: false,
         uniqueFilter: 0,
-        dataCache: null,
-        rawCache: null,
         messagesDeltaTime: null,
         messagesPerSecond: 0,
         messagesPerSecondCache: 0,
+        lastRawEntry: null,
       }
     },
     computed: {
+      dataRecordsLength () { return this.dataRecords.length },
       dataLength () {
         return this.chartDataValueArray.length
       },
@@ -587,25 +576,55 @@
         if (this.dataSetLength < this.uniqueFilter && this.uniqueFilter > 1 && this.dataLength > 1) {
           return false
         } else {
-          return true }
+          return true
+        }
+      },
+      childMessagesPerSecond: {
+        get () {
+          return this.$store.state.childMessagesPerSecond
+        },
+        set (value) {
+          this.$store.commit('updateChildMessagesPerSecond', value)
+        },
       },
     },
     watch: {
+      rawData: {
+        handler () {
+          if (this.isParent) {
+            this.countMessages()
+            this.processData()
+            if (this.entryLogCache[this.entryLogLength - 1] !== undefined) {
+              this.lastRawEntry = this.entryLogCache[this.entryLogLength - 1].data
+            }
+            if (this.enableAdaptiveCharting) {
+              this.adaptiveCharting()
+            }
+          }
+        },
+      },
       messagesPerSecondCache () {
-        if (this.messagesPerSecondCache - 1 < this.cacheDelay) {
+        if (this.messagesPerSecondCache < this.cacheDelay) {
           this.cacheDelay = this.messagesPerSecondCache
-        } else if (this.messagesPerSecondCache > this.cacheDelay + 1 && this.messagesPerSecondCache < 15) {
+        } else if (this.messagesPerSecondCache > this.cacheDelay && this.messagesPerSecondCache < 30) {
           this.cacheDelay = this.messagesPerSecondCache
+        }
+        if (this.childMessagesPerSecond !== this.messagesPerSecondCache) {
+          this.childMessagesPerSecond = this.messagesPerSecondCache
         }
       },
       uniqueFilterGlobal () {
         this.uniqueFilter = this.uniqueFilterGlobal
       },
-      data: {
-        deep: true,
+      dataRecords: {
         handler () {
-          this.processData()
-          this.countMessages()
+          if (!this.isParent) {
+            this.countMessages()
+            this.processData()
+            if (this.enableAdaptiveCharting) {
+              this.adaptiveCharting()
+            }
+          }
         },
       },
       dataHistory () {
@@ -622,12 +641,14 @@
       // this.chartDataValueArray = new Array(1)
       this.chartDataValueArray.fill(0)
       this.entryLog = new Array(this.dataHistoryLocal)
-      this.entryLog.fill({ id: 0, data: 0 })
+      this.entryLog.fill({ timestamp: 0, data: 0 })
     },
     mounted () {
       this.dataHistoryLocal = this.dataHistory
       this.uniqueFilter = this.uniqueFilterGlobal
-      this.deltaTime = Date.now()
+      setTimeout(() => {
+        this.enableAdaptiveCharting = false
+      }, 10000);
     },
     methods: {
       countMessages () {
@@ -641,70 +662,70 @@
       },
       processData () {
         if (this.isParent === false) {
-          if (this.raw.length > 5) {
-            this.isParent = true
-          }
-          this.chartDataValueArray.push(this.data.data)
+          const newChartValues = this.dataRecords.map(item => { return item.data })
+          this.chartDataValueArray.push(...newChartValues)
           if (this.dataLength > this.dataHistoryLocal) {
             const difference = this.dataLength - this.dataHistoryLocal
             this.chartDataValueArray.splice(0, difference)
           }
-          this.entryLog.push({ id: this.data.timestamp, data: this.data.data })
+          this.entryLog.push(...this.dataRecords)
           if (this.entryLogLength > this.dataHistoryLocal) {
-            const difference = this.entryLogLength - this.dataHistoryLocal
+            const difference = this.entryLogLength -
+              this.dataHistoryLocal
             this.entryLog.splice(0, difference)
           }
         } else {
-          this.chartDataValueArray.push(this.data.data)
+          const newChartValues = this.dataRecords.map(item => { return item.data })
+          this.chartDataValueArray.push(...newChartValues)
           if (this.dataLength > this.dataHistoryLocal) {
             const difference = this.dataLength - this.dataHistoryLocal
             this.chartDataValueArray.splice(0, difference)
           }
-          this.entryLog.push({ id: this.data.timestamp, data: this.raw })
+          this.entryLog.push(...this.rawData)
           if (this.entryLogLength > this.dataHistoryLocal) {
             const difference = this.entryLogLength - this.dataHistoryLocal
             this.entryLog.splice(0, difference)
           }
-        }
-        if (this.dataLength > 86 && this.isBinary && this.dataSetLength > 3) {
-          this.fill = true
-        } else if (this.dataLength < 87) {
-          this.fill = false
-        }
-        if (!this.isBinary && this.dataLength < 60 && this.chartType !== this.typeOptions[2]) {
-          this.isBinary = true
-          this.setBar()
-        } else {
-          if (this.chartType !== this.typeOptions[0] && !this.isParent) {
-            this.setLine()
-          }
-        }
-        if (!this.isBinary && this.dataLength < 90) {
-          this.isBinary = false
-          this.setLine()
         }
         const now = Date.now()
         if ((this.deltaTime + (1000 / this.cacheDelay)) < now) {
           this.deltaTime = now
           this.entryLogCache = this.entryLog.slice(0)
-          this.dataCache = this.data.data
-          this.rawCache = this.raw
           this.chartDataValueArrayCache = this.chartDataValueArray.slice(0)
         }
       },
       setBar () {
         if (this.chartType !== this.typeOptions[1]) {
           this.chartType = this.typeOptions[1]
-          this.lineWidth = 4
+          this.lineWidth = 0.5
           this.radius = 0
         }
       },
       setLine () {
         if (this.chartType !== this.typeOptions[0]) {
           this.chartType = this.typeOptions[0]
-          this.lineWidth = 1.5
-          this.radius = 2
+          this.lineWidth = 0.6
+          this.radius = 0.1
           this.autoLineWidth = false
+        }
+      },
+      adaptiveCharting () {
+        if (this.dataLength > 1500 && this.isBinary && this.dataSetLength > 3) {
+          this.fill = true
+        } else if (this.dataLength < 800) {
+          this.fill = false
+        }
+        if ( this.dataLength < 2000 && this.chartType !== this.typeOptions[2]) {
+          this.isBinary = true
+          this.setBar()
+        } else {
+          if (this.chartType !== this.typeOptions[0] && !this.isParent && this.dataLength < 1000 ) {
+            this.setLine()
+          }
+        }
+        if (!this.isBinary && this.dataLength < 300) {
+          this.isBinary = false
+          this.setLine()
         }
       },
       rawStringLength (input) {
