@@ -6,26 +6,16 @@ This front-end client for the Signal Broker is designed to be simple and easy. O
 
 ## Available features
 
-* Bus, frame and signal monitoring
+* Bus, frame and signal monitoring and publishing
 * Adaptive charting based on activity over time
 * Customizable line or bar charts
-* Display CAN/LIN/Flexray Buses, Frames and Signals in a searchable, hierachical tree
+* Display and search of CAN/LIN/Flexray Buses, Frames and Signals in a searchable, hierachical tree
 * Automatic realtime Frame and Signal recording
-* Realtime search of Buses, Frames and Signals within a tree hierarchy
-* Responsive design for all screen sizes
-* Cross-platform compatible with modern browsers
-* Adjustable filter to hide redundant data
-* Adjustable data history length
-* Historical data table display per Signal and Frame
-* Dark theme (customizable interface)
+* Responsive design for all screen sizes and cross-platform compatible with modern browsers
+* Historical data table display per Signal and Frame with adjustable data history length
 * Realtime Hex/Decimal/Binary converter
 
 ## Future development
-* Configurable OBD Diagnostics
-* State persistence using browser storage
-* Import/Export functionality
-* Configurable presets
-* Realtime lag/delay calculation and display
 * Charts with multiple data sources
 * Chart editor for multi-data charts
 * External peripheral support

@@ -1,228 +1,361 @@
 <template>
-  <VCard class="marginToolbar">
-    <VToolbar
-      card
-      color="transparent"
+  <VLayout
+    row
+    wrap
+  >
+    <VFlex
+      lg8
+      xl7
+      xs12
+      mb-5
+      pb-5
     >
-      <VIcon>
-        nature
-      </VIcon>
-      <VToolbarTitle>
-        Selection tree
-      </VToolbarTitle>
-      <VSpacer />
-    </VToolbar>
-    <VLayout
-      row
-      wrap
-    >
-      <VFlex
-        xs12
-        sm12
-        md6
-      >
-        <VCardText class="tree py-0 px-0">
-          <VSheet
-            class="mb-3 pl-3"
-            color="transparent"
+      <VCard class="marginToolbar">
+        <VToolbar
+          card
+          color="transparent"
+        >
+          <VIcon>
+            nature
+          </VIcon>
+          <VToolbarTitle>
+            Selection tree
+          </VToolbarTitle>
+          <VSpacer />
+        </VToolbar>
+        <VLayout
+          row
+          wrap
+        >
+          <VFlex
+            xs12
+            sm12
+            md6
           >
-            <VLayout row>
-              <VTextField
-                v-model.trim.lazy="search"
-                :disabled="signalSelectionItems.length === 0"
-                label="Filter busses, frames and signals"
-                flat
-                hide-details
-                clearable
-                prepend-icon="search"
-                @focus="collapseTree"
-                @blur="openTree"
-              />
-              <VTooltip bottom>
-                <template v-slot:activator="{on}">
-                  <VBtn
-                    icon
-                    class="mt-3"
+            <VCardText class="tree py-0 px-0">
+              <VSheet
+                class="mb-3 pl-3"
+                color="transparent"
+              >
+                <VLayout row>
+                  <VTextField
+                    v-model.trim.lazy="search"
+                    :disabled="signalSelectionItems.length === 0"
+                    label="Filter busses, frames and signals"
                     flat
-                    v-on="on"
-                    @click="fetchLists"
-                  >
-                    <VIcon>
-                      cached
-                    </VIcon>
-                  </VBtn>
-                </template>
-                <span>Refresh</span>
-              </VTooltip>
-            </VLayout>
-          </VSheet>
-          <VDivider class="hidden-md-and-up" />
-          <VSheet
-            v-if="signalSelectionItems.length === 1"
-            class="overflowY
+                    hide-details
+                    clearable
+                    prepend-icon="search"
+                    @focus="collapseTree"
+                    @blur="openTree"
+                  />
+                  <VTooltip bottom>
+                    <template v-slot:activator="{on}">
+                      <VBtn
+                        icon
+                        class="mt-3"
+                        flat
+                        v-on="on"
+                        @click="fetchLists"
+                      >
+                        <VIcon>
+                          cached
+                        </VIcon>
+                      </VBtn>
+                    </template>
+                    <span>Refresh</span>
+                  </VTooltip>
+                </VLayout>
+              </VSheet>
+              <VDivider class="hidden-md-and-up" />
+              <VSheet
+                v-if="signalSelectionItems.length === 1"
+                class="overflowY
                  py-4
                  pl-4
                  "
-          >
-            <VExpandTransition>
-              <VTreeview
-                v-model="selectedSignalsLocal"
-                :search="search"
-                itemid="id"
-                :items="signalSelectionItems"
-                selectable
-                transition
-                :open.sync="treeOpenItems"
-                return-object
-                @input="selectSignals"
-              />
-            </VExpandTransition>
-          </VSheet>
-          <VCardText
-            v-else
-            pt-3
-          >
-            <VContainer>
-              <VLayout
-                align-center
-                justify-center
               >
-                <VIcon
-                  large
-                  disabled
+                <VExpandTransition>
+                  <VTreeview
+                    v-model="selectedSignalsLocal"
+                    :search="search"
+                    itemid="id"
+                    :items="signalSelectionItems"
+                    selectable
+                    transition
+                    :open.sync="treeOpenItems"
+                    return-object
+                    @input="selectSignals"
+                  />
+                </VExpandTransition>
+              </VSheet>
+              <VCardText
+                v-else
+                pt-3
+              >
+                <VContainer>
+                  <VLayout
+                    align-center
+                    justify-center
+                  >
+                    <VIcon
+                      large
+                      disabled
+                    >
+                      sync_problem
+                    </VIcon>
+                  </VLayout>
+                </VContainer>
+              </VCardText>
+            </VCardText>
+          </VFlex>
+          <VFlex
+            xs12
+            sm12
+            md6
+            class=""
+          >
+            <VDivider class="hidden-md-and-up" />
+            <div
+              v-if="selectedSignalsLocalLength === 0"
+              key="title"
+              class="title font-weight-light grey--text pa-3 text-xs-center mt-2"
+            >
+              Select signals/frames to be analyzed and controlled
+            </div>
+            <div
+              v-else
+              class="px-3 pb-5 pt-3 overflowY2"
+            >
+              <span
+                v-for="(selection, index) in selectedSignalsChip"
+                :key="index"
+              >
+                <VSpacer
+                  v-if="selection.isParent"
+                  class="my-4"
+                />
+                <VChip
+                  v-ripple
+                  small
+                  :label="selection.isParent"
+                  @input="remove(index)"
                 >
-                  sync_problem
-                </VIcon>
-              </VLayout>
-            </VContainer>
-          </VCardText>
-        </VCardText>
-      </VFlex>
-      <VFlex
-        xs12
-        sm12
-        md6
-        class=""
-      >
-        <VDivider class="hidden-md-and-up" />
-        <div
-          v-if="selectedSignalsLocalLength === 0"
-          key="title"
-          class="title font-weight-light grey--text pa-3 text-xs-center"
-        >
-          Select signals/frames to be analyzed and controlled
-        </div>
-        <div
-          v-else
-          class="px-3 pb-5 pt-3 overflowY2"
-        >
-          <span
-            v-for="(selection, index) in selectedSignalsChip"
-            :key="index"
+                  {{ selection.name }}
+                </VChip>
+                <span
+                  v-if="selection.isParent"
+                  class="caption grey--text"
+                > {{ selection.namespace }}</span>
+                <VSpacer
+                  v-if="selection.isParent"
+                  class="my-0"
+                />
+              </span>
+            </div>
+          </VFlex>
+        </VLayout>
+        <VDivider />
+        <VCardActions>
+          <VLayout
+            row
+            wrap
           >
-            <VSpacer
-              v-if="selection.isParent"
-              class="my-4"
-            />
-            <VChip
-              v-ripple
-              small
-              :label="selection.isParent"
-              @input="remove(index)"
+            <VSpacer />
+            <VTooltip bottom>
+              <template v-slot:activator="{on}">
+                <VBtn
+                  :disabled="selectedSignalsLocalLength === 0"
+                  flat
+                  class="mx-1"
+                  v-on="on"
+                  @click="clear"
+                >
+                  <VIcon>
+                    clear_all
+                  </VIcon>
+                </VBtn>
+              </template>
+              <span>Clear selection</span>
+            </VTooltip>
+            <div class="mx-1">
+              <VTooltip bottom>
+                <template v-slot:activator="{on}">
+                  <VBtn
+                    :disabled="selectedSignalsChip === selectedSignals || signalSelectionItems.length === 0"
+                    color="success"
+                    depressed
+                    v-on="on"
+                    @click="saveSignalState"
+                  >
+                    <VIcon>
+                      save
+                    </VIcon>
+                  </VBtn>
+                </template>
+                <span>Save</span>
+              </VTooltip>
+            </div>
+            <div class="mx-1">
+              <VTooltip bottom>
+                <template v-slot:activator="{on}">
+                  <VBtn
+                    :disabled="selectedSignalsLength === 0 || selectedSignalsChip !== selectedSignals"
+                    color="info"
+                    depressed
+                    to="monitor"
+                    v-on="on"
+                  >
+                    <VIcon>
+                      traffic
+                    </VIcon>
+                  </VBtn>
+                </template>
+                <span>Traffic monitor</span>
+              </VTooltip>
+            </div>
+            <div class="mx-1">
+              <VTooltip bottom>
+                <template v-slot:activator="{on}">
+                  <VBtn
+                    :disabled="selectedSignalsLength === 0 || selectedSignalsChip !== selectedSignals"
+                    color="info"
+                    depressed
+                    to="diagnostics"
+                    v-on="on"
+                  >
+                    <VIcon>
+                      bug_report
+                    </VIcon>
+                  </VBtn>
+                </template>
+                <span>Diagnostics</span>
+              </VTooltip>
+            </div>
+            <div class="mx-1">
+              <VTooltip bottom>
+                <template v-slot:activator="{on}">
+                  <VBtn
+                    :disabled="selectedSignalsLength === 0 || selectedSignalsChip !== selectedSignals"
+                    color="info"
+                    depressed
+                    to="publish"
+                    v-on="on"
+                  >
+                    <VIcon>
+                      publish
+                    </VIcon>
+                  </VBtn>
+                </template>
+                <span>Publish</span>
+              </VTooltip>
+            </div>
+          </VLayout>
+        </VCardActions>
+      </VCard>
+    </VFlex>
+    <VFlex
+      lg3
+      offset-lg1
+      xl4
+      offset-xl1
+      xs12
+    >
+      <VCard class="marginToolbar">
+        <VToolbar
+          card
+          color="transparent"
+        >
+          <VIcon>
+            library_books
+          </VIcon>
+          <VToolbarTitle>
+            Selection presets
+          </VToolbarTitle>
+          <VSpacer />
+        </VToolbar>
+        <VContainer>
+          <VLayout
+            row
+            wrap
+          >
+            <VFlex>
+              <VTextField
+                v-model="presetName"
+                label="Preset name"
+              />
+            </VFlex>
+            <VFlex
+              shrink
             >
-              {{ selection.name }}
-            </VChip>
-            <span
-              v-if="selection.isParent"
-              class="caption grey--text"
-            > {{ selection.namespace }}</span>
-            <VSpacer
-              v-if="selection.isParent"
-              class="my-0"
-            />
-          </span>
-        </div>
-      </VFlex>
-    </VLayout>
-    <VDivider />
-    <VCardActions>
-      <VLayout
-        row
-        wrap
-      >
-        <VSpacer />
-        <VTooltip bottom>
-          <template v-slot:activator="{on}">
-            <VBtn
-              :disabled="selectedSignalsLocalLength === 0"
-              flat
-              class="mx-1"
-              v-on="on"
-              @click="clear"
+              <div class="mx-1">
+                <VTooltip bottom>
+                  <template v-slot:activator="{on}">
+                    <VBtn
+                      color="success"
+                      depressed
+                      v-on="on"
+                      @click="savePreset"
+                    >
+                      <VIcon>
+                        library_add
+                      </VIcon>
+                    </VBtn>
+                  </template>
+                  <span>Add preset</span>
+                </VTooltip>
+              </div>
+            </VFlex>
+            <VFlex
+              xs12
+              my-5
             >
-              <VIcon>
-                clear_all
-              </VIcon>
-            </VBtn>
-          </template>
-          <span>Clear selection</span>
-        </VTooltip>
-        <div class="mx-1">
-          <VTooltip bottom>
-            <template v-slot:activator="{on}">
-              <VBtn
-                :disabled="selectedSignalsChip === selectedSignals || signalSelectionItems.length === 0"
-                color="success"
-                depressed
-                v-on="on"
-                @click="saveSignalState"
+              <VChip
+                v-for="(preset, index) in retrievedStorage.presets"
+                :key="index"
+                close
+                @click="selectPreset(preset)"
+                @input="remove(index)"
               >
-                <VIcon>
-                  save
-                </VIcon>
-              </VBtn>
-            </template>
-            <span>Save</span>
-          </VTooltip>
-        </div>
-        <div class="mx-1">
-          <VTooltip bottom>
-            <template v-slot:activator="{on}">
-              <VBtn
-                :disabled="selectedSignalsLength === 0 || selectedSignalsChip !== selectedSignals"
-                color="info"
-                depressed
-                to="monitor"
-                v-on="on"
-              >
-                <VIcon>
-                  traffic
-                </VIcon>
-              </VBtn>
-            </template>
-            <span>Traffic monitor</span>
-          </VTooltip>
-        </div>
-        <div class="mx-1">
-          <VTooltip bottom>
-            <template v-slot:activator="{on}">
-              <VBtn
-                :disabled="selectedSignalsLength === 0 || selectedSignalsChip !== selectedSignals"
-                color="info"
-                depressed
-                to="diagnostics"
-                v-on="on"
-              >
-                <VIcon>
-                  bug_report
-                </VIcon>
-              </VBtn>
-            </template>
-            <span>Diagnostics</span>
-          </VTooltip>
-        </div>
-      </VLayout>
-    </VCardActions>
+                {{ preset.name }}
+              </VChip>
+            </VFlex>
+          </VLayout>
+        </VContainer>
+        <VDivider />
+        <VCardActions>
+          <VLayout
+            row
+            wrap
+          >
+            <VTextField
+              v-model.trim="presetState"
+              hide-actions
+              hide-details
+              class="ml-3 mb-3"
+              label="Export/Import Presets"
+            />
+            <VTooltip bottom>
+              <template v-slot:activator="{on}">
+                <VBtn
+                  class="mx-3"
+                  flat
+                  icon
+                  large
+                  v-on="on"
+                  @click="savePresets"
+                >
+                  <VIcon large>
+                    import_export
+                  </VIcon>
+                </VBtn>
+              </template>
+              <span>Import/Export presets</span>
+            </VTooltip>
+          </VLayout>
+        </VCardActions>
+      </VCard>
+    </VFlex>
     <VSnackbar
       v-model="snackbarDisplayed"
       bottom
@@ -254,21 +387,26 @@
         </VIcon>
       </VBtn>
     </VSnackbar>
-  </VCard>
+  </VLayout>
 </template>
 <script>
   import './../grpc/dist/api.js'
   export default {
-    data: () => { return {
-      request: '',
-      snackbarDisplayed: false,
-      treeOpenItems: [],
-      selectedSignalsLocal: [],
-      selectedSignalsChip: [],
-      snackbarMessage: 'Not connected',
-      snackbarIcon: 'warning',
-      snackbarUrl: '',
-    } },
+    data: () => {
+      return {
+        request: '',
+        snackbarDisplayed: false,
+        treeOpenItems: [],
+        selectedSignalsLocal: [],
+        selectedSignalsChip: [],
+        snackbarMessage: 'Not connected',
+        snackbarIcon: 'warning',
+        snackbarUrl: '',
+        retrievedStorage: '',
+        presetName: '',
+        presetState: '',
+      }
+    },
     computed: {
       selectedSignalsLength () {
         return this.selectedSignals.length
@@ -335,8 +473,48 @@
       }
       this.reset()
       this.selectedSignalsLocal = this.selectedSignals
+      this.getPresets()
+      this.savePresets()
     },
     methods: {
+      remove (index) {
+        this.retrievedStorage.presets.splice(index, 1)
+        this.updatePresetState()
+      },
+      getPresets () {
+        if (localStorage.getItem('signalBroker') !== null) {
+          this.retrievedStorage = JSON.parse(localStorage.getItem('signalBroker'))
+        } else {
+          const signalBroker = { presets: [] }
+          this.retrievedStorage = signalBroker
+        }
+      },
+      savePreset () {
+        const existingPresetIndex = this.retrievedStorage.presets.findIndex((preset) => { return preset.name === this.presetName })
+        if (existingPresetIndex === -1) {
+          this.retrievedStorage.presets.push({ name: this.presetName, signals: this.selectedSignalsLocal })
+        } else {
+          this.retrievedStorage.presets[existingPresetIndex].signals = this.selectedSignalsLocal
+        }
+        this.updatePresetState()
+      },
+      updatePresetState () {
+        const stringified = JSON.stringify(this.retrievedStorage)
+        this.presetState = stringified
+        localStorage.setItem('signalBroker', stringified)
+      },
+      selectPreset (preset) {
+        this.selectedSignalsLocal = preset.signals
+        this.presetName = preset.name
+      },
+      savePresets () {
+        if (this.presetState === '') {
+          const stringified = JSON.stringify(this.retrievedStorage)
+          this.presetState = stringified
+        } else {
+          this.retrievedStorage = JSON.parse(this.presetState)
+        }
+      },
       collapseTree () {
         this.treeOpenItems = []
       },
@@ -390,8 +568,8 @@
             this.connectionStatus = 'success--text'
           }
           this.populateParents(response.getNetworkinfoList())
-        } else {
-          this.snackbar('error--text', "The broker envoy is offline.", "https://github.com/volvo-cars/signalbroker-web-client/tree/master/configuration/grpc_web")
+        } else if (err) {
+          this.snackbar('error--text', 'The broker envoy is offline.', 'https://github.com/volvo-cars/signalbroker-web-client/tree/master/configuration/grpc_web')
         }
       },
       populateParents (namespaceList) {
@@ -406,14 +584,14 @@
             id: list.getNamespace().getName() + globalIndex,
             name: list.getNamespace().getName(),
             children: this.listNamespaceSignals(list),
-          };
+          }
           globalIndex += 1
           signals.children.push(exportedChild)
         })
         this.signalSelectionItems = [signals]
       },
       listNamespaceSignals (namespaceName) {
-        const frameGroup = [];
+        const frameGroup = []
         const parentName = namespaceName.getNamespace().getName()
         this.request = 'Fetch signals'
         // eslint-disable-next-line no-undef
@@ -427,7 +605,7 @@
         this.requestHistory.push({ date: Date.now(), request: this.request, response: 'List signals' })
         SystemService.listSignals(request, {}, function listSignalsCallback (err, response) {
           if (response) {
-            let childIndex = 0;
+            let childIndex = 0
             const frames = response.getFrameList()
             frames.forEach(frame => {
               const frameMetaData = frame.getSignalinfo().getMetadata()
@@ -472,6 +650,9 @@
               childIndex += 1
             })
           }
+          if (err) {
+            console.log('error', err)
+          }
         })
         return frameGroup
       },
@@ -482,12 +663,12 @@
 .overflowY {
   overflow-x: hidden;
   overflow-y: auto;
-  max-height: calc(78vh - 380px);
+  max-height: calc(88vh - 180px);
 }
 .overflowY2 {
   overflow-x: hidden;
   overflow-y: auto;
-  max-height: calc(78vh - 316px);
+  max-height: calc(88vh - 106px);
 }
 .marginToolbar {
   margin-top: -64px;

@@ -1,7 +1,7 @@
 <template>
   <VFadeTransition>
     <VFlex
-      v-if="visible || highlight"
+      v-if="visible"
       xs12
       sm12
       md12
@@ -87,15 +87,9 @@
             >
               <VIcon
                 small
-                color="grey"
+                :color="showLog ? 'grey lighten-2' : 'grey darken-1' "
               >
                 view_list
-              </VIcon>
-              <VIcon
-                small
-                color="grey"
-              >
-                {{ showLog ? 'keyboard_arrow_down' : 'keyboard_arrow_up' }}
               </VIcon>
             </VBtn>
             <VBtn
@@ -105,15 +99,9 @@
             >
               <VIcon
                 small
-                color="grey"
+                :color="showAdditionalInfo ? 'grey lighten-2' : 'grey darken-1' "
               >
                 info
-              </VIcon>
-              <VIcon
-                small
-                color="grey"
-              >
-                {{ showAdditionalInfo ? 'keyboard_arrow_down' : 'keyboard_arrow_up' }}
               </VIcon>
             </VBtn>
             <VBtn
@@ -123,22 +111,16 @@
             >
               <VIcon
                 small
-                color="grey"
+                :color="showConfiguration ? 'grey lighten-2' : 'grey darken-1' "
               >
                 settings
-              </VIcon>
-              <VIcon
-                small
-                color="grey"
-              >
-                {{ showConfiguration ? 'keyboard_arrow_down' : 'keyboard_arrow_up' }}
               </VIcon>
             </VBtn>
           </VLayout>
         </VCardActions>
         <VSlideYTransition>
           <VCardText
-            v-if="showLog && visible"
+            v-show="showLog"
             class="
         pa-0
         ma-0
@@ -187,7 +169,6 @@
           >
             <VDivider />
             <VList
-              v-if="visible || highlight"
               dense
               class="grey--text text--lighten-1"
             >
@@ -270,7 +251,6 @@
           >
             <VDivider />
             <VList
-              v-if="visible || highlight"
               dense
             >
               <VListTile>
@@ -499,16 +479,19 @@
     filters: {
       toDate (input) {
         const date = new Date(input / 1000)
-        return date.toLocaleTimeString({}, { hour12: false })
+        const localized = date.toLocaleTimeString({}, { hour12: false })
+        const milliseconds = date.getMilliseconds().toString()
+          .padStart(3, '0')
+        return localized + '.' + milliseconds
       },
       toString (input) {
         return input.toString()
       },
       rawStringFilter (input) {
-        return input.toString(16).padStart(2, "0");
+        return input.toString(16).padStart(2, '0')
       },
       padNumber (input) {
-        return input.toString().padStart(3, "0");
+        return input.toString().padStart(3, '0')
       },
     },
     props: {
@@ -528,7 +511,7 @@
           sortBy: 'timestamp',
           descending: true,
         },
-        cacheDelay: 8,
+        cacheDelay: 1,
         showAdditionalInfo: false,
         showConfiguration: false,
         entryLog: [],
@@ -637,18 +620,18 @@
       },
     },
     created () {
-      this.chartDataValueArray = new Array(this.dataHistoryLocal)
+      // this.chartDataValueArray = new Array(this.dataHistoryLocal)
       // this.chartDataValueArray = new Array(1)
-      this.chartDataValueArray.fill(0)
-      this.entryLog = new Array(this.dataHistoryLocal)
-      this.entryLog.fill({ timestamp: 0, data: 0 })
+      // this.chartDataValueArray.fill(0)
+      // this.entryLog = new Array(this.dataHistoryLocal)
+      // this.entryLog.fill({ timestamp: 0, data: 0 })
     },
     mounted () {
       this.dataHistoryLocal = this.dataHistory
       this.uniqueFilter = this.uniqueFilterGlobal
       setTimeout(() => {
         this.enableAdaptiveCharting = false
-      }, 10000);
+      }, 10000)
     },
     methods: {
       countMessages () {
@@ -715,11 +698,11 @@
         } else if (this.dataLength < 800) {
           this.fill = false
         }
-        if ( this.dataLength < 2000 && this.chartType !== this.typeOptions[2]) {
+        if (this.dataLength < 2000 && this.chartType !== this.typeOptions[2]) {
           this.isBinary = true
           this.setBar()
         } else {
-          if (this.chartType !== this.typeOptions[0] && !this.isParent && this.dataLength < 1000 ) {
+          if (this.chartType !== this.typeOptions[0] && !this.isParent && this.dataLength < 1000) {
             this.setLine()
           }
         }

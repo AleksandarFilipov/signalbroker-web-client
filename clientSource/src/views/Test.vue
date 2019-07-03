@@ -258,7 +258,7 @@
                   class="mx-1"
                   :disabled="selectedSignals.length === 0"
                   v-on="on"
-                  @click="scanResults = []"
+                  @click="scanResults.length = 0"
                 >
                   <VIcon>
                     clear_all
@@ -414,7 +414,7 @@
   import './../grpc/dist/api.js'
   import services from './../assets/pid.js'
   export default {
-    name: "Diagnostic",
+    name: 'Diagnostic',
     filters: {
       rawStringFilter (input) {
         return input.toString(16)
@@ -424,57 +424,59 @@
         return date.toLocaleTimeString({}, { hour12: false })
       },
     },
-    data: () => { return {
-      snackbarDisplayed: false,
-      service: 1,
-      pid: [0, 24],
-      pid2: -1,
-      chipValue: [],
-      showEmptyResults: true,
-      subscribed: false,
-      request: '',
-      hexDec: 'hex',
-      diagnosticsQuery: null,
-      dataHistory: 52,
-      snackbarMessage: 'Not connected',
-      snackbarIcon: 'warning',
-      snackbarColor: 'error',
-      responseArray: [],
-      signalDataList: [],
-      firstRun: true,
-      chipOnline: [],
-      selected: false,
-      diagnosticsServiceClient: null,
-      responsePayload: null,
-      scanResults: [],
-      headers: [
-        {
-          text: 'Date',
-          value: 'date',
-          align: 'left',
-          sortable: true,
-        },
-        {
-          text: 'Service ID',
-          value: 'serviceId',
-          align: 'left',
-          sortable: true,
-        },
-        {
-          text: 'PID',
-          value: 'pIdHex',
-          align: 'left',
-          sortable: true,
-        },
-        {
-          text: 'Raw Response Data',
-          value: 'data',
-          class: 'grow',
-          align: 'left',
-          sortable: true,
-        },
-      ],
-    } },
+    data: () => {
+      return {
+        snackbarDisplayed: false,
+        service: 1,
+        pid: [0, 24],
+        pid2: -1,
+        chipValue: [],
+        showEmptyResults: true,
+        subscribed: false,
+        request: '',
+        hexDec: 'hex',
+        diagnosticsQuery: null,
+        dataHistory: 52,
+        snackbarMessage: 'Not connected',
+        snackbarIcon: 'warning',
+        snackbarColor: 'error',
+        responseArray: [],
+        signalDataList: [],
+        firstRun: true,
+        chipOnline: [],
+        selected: false,
+        diagnosticsServiceClient: null,
+        responsePayload: null,
+        scanResults: [],
+        headers: [
+          {
+            text: 'Date',
+            value: 'date',
+            align: 'left',
+            sortable: true,
+          },
+          {
+            text: 'Service ID',
+            value: 'serviceId',
+            align: 'left',
+            sortable: true,
+          },
+          {
+            text: 'PID',
+            value: 'pIdHex',
+            align: 'left',
+            sortable: true,
+          },
+          {
+            text: 'Raw Response Data',
+            value: 'data',
+            class: 'grow',
+            align: 'left',
+            sortable: true,
+          },
+        ],
+      }
+    },
     computed: {
       serviceConvert: {
         get () {
@@ -609,7 +611,7 @@
       },
       queryObdInteractive () {
         this.request = 'Query OBD'
-        const signals = [];
+        const signals = []
         this.selectedSignals.forEach(signal => {
           if (signal.signalId) {
             signals.push(signal.signalId)
@@ -632,7 +634,7 @@
           this.request = 'OBD Scan'
           // eslint-disable-next-line no-undef
           const request = new api.default.DiagnosticsRequest()
-          const signals = [];
+          const signals = []
           this.selectedSignals.forEach(signal => {
             if (signal.signalId) {
               signals.push(signal.signalId)
@@ -670,14 +672,14 @@
           if (this.connectionStatus !== 'success--text') {
             this.connectionStatus = 'success--text'
           }
-        });
+        })
         this.diagnosticsQuery.on('end', () => {
-          this.snackbarDisplayed = false;
+          this.snackbarDisplayed = false
         })
         this.diagnosticsQuery.on('status', (status) => {
           if (status.details.length > 1) {
             this.snackbar('info', status.details, 'info')
-            this.subscribed = false;
+            this.subscribed = false
           }
         })
         this.diagnosticsQuery.on('error', (error) => {
@@ -687,12 +689,12 @@
         this.$store.commit('updateRequestHistory', this.requestHistory)
       },
       stopdiagnosticsQuery () {
-        this.request = 'Cancel Subscription';
-        this.subscribed = false;
+        this.request = 'Cancel Subscription'
+        this.subscribed = false
         this.$store.commit('updateRequestHistory', this.requestHistory)
       },
       responseQuery (response, request) {
-        this.subscribed = false;
+        this.subscribed = false
         const index = parseInt(request.getDataidentifier().toString(16), 10)
         const serviceId = parseInt(request.getServiceid_asU8().toString(16), 10)
         const descriptionArray = services()[serviceId]

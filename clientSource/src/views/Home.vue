@@ -73,11 +73,12 @@
     name: 'Home',
     components: {
     },
-    data: () => {return {
-      stepperValue: 0,
-      response: '',
-      request: '',
-    }
+    data: () => {
+      return {
+        stepperValue: 0,
+        response: '',
+        request: '',
+      }
     },
     created () {
     // this.listSignals('ChassisCANhs')

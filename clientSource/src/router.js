@@ -50,6 +50,11 @@ export default new Router({
       component: () => { return import(/* webpackChunkName: "diagnostics" */ './views/Diagnostics.vue') },
     },
     {
+      path: '/publish',
+      name: 'publish',
+      component: () => { return import(/* webpackChunkName: "publish" */ './views/Publish.vue') },
+    },
+    {
       path: '/test',
       name: 'test',
       component: () => { return import(/* webpackChunkName: "test" */ './views/Test.vue') },

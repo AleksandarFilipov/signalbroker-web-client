@@ -36,9 +36,11 @@
 </template>
   <script>
   export default {
-    data: () => { return {
-      headers: [{ value: 'date', text: 'Date' }, { value: 'request', text: 'Request' }, { value: 'response', text: 'Response' }],
-    } },
+    data: () => {
+      return {
+        headers: [{ value: 'date', text: 'Date' }, { value: 'request', text: 'Request' }, { value: 'response', text: 'Response' }],
+      }
+    },
     computed: {
       requestHistory: {
         get () {

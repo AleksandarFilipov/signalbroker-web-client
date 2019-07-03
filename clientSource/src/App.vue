@@ -76,6 +76,24 @@
             </VListTileSubTitle>
           </VListTileContent>
         </VListTile>
+        <VListTile
+          avatar
+          to="/publish"
+        >
+          <VListTileAvatar>
+            <VIcon>
+              publish
+            </VIcon>
+          </VListTileAvatar>
+          <VListTileContent>
+            <VListTileTitle>
+              Publish
+            </VListTileTitle>
+            <VListTileSubTitle>
+              Generate traffic
+            </VListTileSubTitle>
+          </VListTileContent>
+        </VListTile>
         <!-- <VListTile
           avatar
           to="/sequences"
@@ -284,9 +302,11 @@
 </template>
 <script>
   export default {
-    data: () => { return {
-      dialog: false,
-    } },
+    data: () => {
+      return {
+        dialog: false,
+      }
+    },
     computed: {
       selectedSignals: {
         get () {

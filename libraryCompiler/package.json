@@ -1,7 +1,7 @@
 {
 	"name": "grpc-web-commonjs-example",
 	"dependencies": {
-		"google-protobuf": "^3.6.1",
+		"google-protobuf": "^3.9.0-rc.1",
 		"grpc-web": "^1.0.3"
 	},
 	"devDependencies": {

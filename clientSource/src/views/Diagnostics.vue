@@ -289,7 +289,7 @@
                   class="mx-1"
                   :disabled="selectedSignals.length === 0"
                   v-on="on"
-                  @click="scanResults = []"
+                  @click="scanResults.length = 0"
                 >
                   <VIcon>
                     clear_all
@@ -462,13 +462,13 @@
   import './../grpc/dist/api.js'
   import services from './../assets/pid.js'
   export default {
-    name: "Diagnostic",
+    name: 'Diagnostic',
     filters: {
       rawStringFilter (input) {
-        return input.toString(16).padStart(2, "0");
+        return input.toString(16).padStart(2, '0')
       },
       decimalPad (input) {
-        return input.toString().padStart(3, "0");
+        return input.toString().padStart(3, '0')
       },
       toDate (input) {
         const date = new Date(input)
@@ -482,14 +482,14 @@
               return {
                 to: function (baseTo) {
                   return parseInt(num, baseFrom).toString(baseTo)
-                    .padStart(8, "0");
+                    .padStart(8, '0')
                 },
               }
             },
           }
         }
         return convertBase(num).from(10)
-          .to(2);
+          .to(2)
       },
       // hexadecimal to binary
       hex2bin (num) {
@@ -498,77 +498,79 @@
             from: function (baseFrom) {
               return {
                 to: function (baseTo) {
-                  return parseInt(num, baseFrom).toString(baseTo);
+                  return parseInt(num, baseFrom).toString(baseTo)
                 },
               }
             },
           }
         }
         return convertBase(num).from(16)
-          .to(2);
+          .to(2)
       },
     },
-    data: () => { return {
-      snackbarDisplayed: false,
-      pagination: {
-        sortBy: 'date',
-        descending: true,
-        rowsPerPage: -1,
-      },
-      service: 1,
-      pid: [0, 18],
-      pid2: -1,
-      scanProgress: 0,
-      scanning: false,
-      chipValue: [],
-      showEmptyResults: true,
-      subscribed: false,
-      request: '',
-      hexDec: 'hex',
-      diagnosticsQuery: null,
-      dataHistory: 52,
-      snackbarMessage: 'Not connected',
-      snackbarIcon: 'warning',
-      snackbarColor: 'error',
-      responseArray: [],
-      signalDataList: [],
-      firstRun: true,
-      chipOnline: [],
-      selected: false,
-      diagnosticsServiceClient: null,
-      responsePayload: null,
-      scanResults: [],
-      headers: [
-        {
-          text: 'Date',
-          value: 'date',
-          align: 'left',
-          sortable: true,
-          width: 120,
+    data: () => {
+      return {
+        snackbarDisplayed: false,
+        pagination: {
+          sortBy: 'date',
+          descending: true,
+          rowsPerPage: -1,
         },
-        {
-          text: 'Service ID',
-          value: 'serviceId',
-          align: 'left',
-          sortable: true,
-          width: 120,
-        },
-        {
-          text: 'PID',
-          value: 'pIdHex',
-          align: 'left',
-          sortable: true,
-          width: 120,
-        },
-        {
-          text: 'Raw Response Data',
-          value: 'data',
-          class: 'grow',
-          align: 'left',
-          sortable: true,
-        },
-      ],
-    } },
+        service: 1,
+        pid: [0, 18],
+        pid2: -1,
+        scanProgress: 0,
+        scanning: false,
+        chipValue: [],
+        showEmptyResults: true,
+        subscribed: false,
+        request: '',
+        hexDec: 'hex',
+        diagnosticsQuery: null,
+        dataHistory: 52,
+        snackbarMessage: 'Not connected',
+        snackbarIcon: 'warning',
+        snackbarColor: 'error',
+        responseArray: [],
+        signalDataList: [],
+        firstRun: true,
+        chipOnline: [],
+        selected: false,
+        diagnosticsServiceClient: null,
+        responsePayload: null,
+        scanResults: [],
+        headers: [
+          {
+            text: 'Date',
+            value: 'date',
+            align: 'left',
+            sortable: true,
+            width: 120,
+          },
+          {
+            text: 'Service ID',
+            value: 'serviceId',
+            align: 'left',
+            sortable: true,
+            width: 120,
+          },
+          {
+            text: 'PID',
+            value: 'pIdHex',
+            align: 'left',
+            sortable: true,
+            width: 120,
+          },
+          {
+            text: 'Raw Response Data',
+            value: 'data',
+            class: 'grow',
+            align: 'left',
+            sortable: true,
+          },
+        ],
+      }
+    },
     computed: {
       serviceConvert: {
         get () {
@@ -702,7 +704,7 @@
           from: function (baseFrom) {
             return {
               to: function (baseTo) {
-                return parseInt(num, baseFrom).toString(baseTo);
+                return parseInt(num, baseFrom).toString(baseTo)
               },
             }
           },
@@ -729,7 +731,7 @@
           this.request = 'OBD Scan'
           // eslint-disable-next-line no-undef
           const request = new api.default.DiagnosticsRequest()
-          const signals = [];
+          const signals = []
           this.selectedSignals.forEach(signal => {
             if (signal.signalId) {
               signals.push(signal.signalId)
@@ -761,13 +763,13 @@
               this.scanProgress = progressChunk * progressMultiplier
               this.diagnosticsRequest(request)
             }
-          }, 200 * scanPidIndex);
+          }, 200 * scanPidIndex)
         }
         setTimeout(() => {
           if (this.scanning === true) {
             this.scanning = false
           }
-        }, (200 * this.pidDifference) + 800);
+        }, (200 * this.pidDifference) + 800)
       },
       diagnosticsRequest (request) {
         // eslint-disable-next-line no-undef
@@ -778,14 +780,14 @@
           if (this.connectionStatus !== 'success--text') {
             this.connectionStatus = 'success--text'
           }
-        });
+        })
         this.diagnosticsQuery.on('end', () => {
-          this.snackbarDisplayed = false;
+          this.snackbarDisplayed = false
         })
         this.diagnosticsQuery.on('status', (status) => {
           if (status.details.length > 1) {
             this.snackbar('info', status.details, 'info')
-            this.subscribed = false;
+            this.subscribed = false
           }
         })
         this.diagnosticsQuery.on('error', (error) => {
@@ -795,12 +797,12 @@
         this.$store.commit('updateRequestHistory', this.requestHistory)
       },
       stopdiagnosticsQuery () {
-        this.request = 'Cancel Subscription';
-        this.subscribed = false;
+        this.request = 'Cancel Subscription'
+        this.subscribed = false
         this.$store.commit('updateRequestHistory', this.requestHistory)
       },
       responseQuery (response, request) {
-        this.subscribed = false;
+        this.subscribed = false
         const index = parseInt(request.getDataidentifier().toString(16), 10)
         const serviceId = parseInt(request.getServiceid_asU8().toString(16), 10)
         const descriptionArray = services()[serviceId]

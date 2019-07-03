@@ -156,11 +156,9 @@
         :items="signalDataList"
         content-class="layout row wrap"
         item-key="name"
-        :pagination.sync="pagination"
       >
         <template v-slot:item="props">
           <SignalCardBuffered
-            v-if="charts || props.item.highlight"
             :name="props.item.name"
             :data-records="props.item.dataRecords"
             :data-type="props.item.dataType"
@@ -200,58 +198,55 @@
 </template>
 <script>
   import './../grpc/dist/api.js'
-  import SignalCardBuffered from "./../components/SignalCardBuffered.vue"
+  import SignalCardBuffered from './../components/SignalCardBuffered.vue'
   export default {
-    name: "Monitor",
+    name: 'Monitor',
     components: { SignalCardBuffered },
     filters: {
       padNumber (input) {
         const length = input.toString().length
         if (length === 1) {
-          return "00" + input
+          return '00' + input
         } else if (length === 2) {
-          return "0" + input
+          return '0' + input
         } else if (length === 0) {
-          return "000"
+          return '000'
         } else {
           return input
         }
       },
     },
-    data: () => { return {
-      pagination: {
-        sortBy: 'name',
-        descending: true,
-      },
-      snackbarDisplayed: false,
-      chipValue: [],
-      subscribed: false,
-      request: '',
-      search: null,
-      caseSensitive: false,
-      stream: null,
-      charts: false,
-      dataHistory: 0,
-      snackbarMessage: 'Not connected',
-      snackbarIcon: 'warning',
-      snackbarColor: 'error',
-      NetworkService: null,
-      subsConfig: null,
-      responseArray: [],
-      signalDataList: [],
-      signalDataListBuffer: [],
-      firstRun: true,
-      firstRunSubscribed: true,
-      chipOnline: [],
-      selected: false,
-      filterStrength: 0,
-      deltaTime: null,
-      messagesPerSecond: 0,
-      messagesPerSecondCache: 0,
-      responseArrayBuffer: [],
-      deltaTimeProcessBuffer: null,
-      clientName: "SBWebClient" + Date.now(),
-    } },
+    data: () => {
+      return {
+        snackbarDisplayed: false,
+        chipValue: [],
+        subscribed: false,
+        request: '',
+        search: null,
+        caseSensitive: false,
+        stream: null,
+        charts: false,
+        dataHistory: 0,
+        snackbarMessage: 'Not connected',
+        snackbarIcon: 'warning',
+        snackbarColor: 'error',
+        NetworkService: null,
+        subsConfig: null,
+        responseArray: [],
+        signalDataList: [],
+        signalDataListBuffer: [],
+        firstRun: true,
+        firstRunSubscribed: true,
+        chipOnline: [],
+        selected: false,
+        filterStrength: 0,
+        deltaTime: null,
+        messagesPerSecond: 0,
+        messagesPerSecondCache: 0,
+        responseArrayBuffer: [],
+        deltaTimeProcessBuffer: null,
+      }
+    },
     computed: {
       childMessagesPerSecond: {
         get () {
@@ -292,13 +287,13 @@
           this.firstRunSubscribed = false
           setTimeout(() => {
             this.dataHistory = 500
-          }, 100);
+          }, 100)
           setTimeout(() => {
             this.charts = true
-          }, 100);
-          setTimeout(() => {
-            this.filterStrength = 2
-          }, 2000);
+          }, 2000)
+          // setTimeout(() => {
+          //   this.filterStrength = 2
+          // }, 2000);
         }
       },
       charts () {
@@ -309,7 +304,7 @@
         setTimeout(() => {
           this.filterStrength = cachedFilter
           this.dataHistory = cachedHistory
-        }, 100);
+        }, 100)
       },
       dataHistory () {
         const filterValue = this.filterStrength * 5 + 10
@@ -331,6 +326,7 @@
     mounted () {
       this.streamSetup()
       this.deltaTime = Date.now()
+      this.initializeSignalList()
     },
     beforeDestroy () {
       const currentStatus = this.connectionStatus
@@ -338,19 +334,22 @@
       this.connectionStatus = currentStatus
     },
     methods: {
+      clientName () {
+        return 'SBWebClient' + Date.now()
+      },
       highlight (name, index) {
         const signal = this.signalDataList.findIndex(element => { return element.name === name })
-        if (signal !== -1) {
+        if (signal !== -1 && this.signalDataList[signal] !== undefined) {
           this.signalDataList[signal].highlight = true
           setTimeout(() => {
             this.signalDataList[signal].highlight = false
-          }, 6000);
+          }, 6000)
         }
-        if (index) {
+        if (index && this.selectedSignals[index] !== undefined) {
           this.selectedSignals[index].highlight = true
           setTimeout(() => {
             this.selectedSignals[index].highlight = false
-          }, 6000);
+          }, 6000)
         }
       },
       snackbar (color, snackbarMessage, icon) {
@@ -383,7 +382,7 @@
         // eslint-disable-next-line no-undef
         this.subsConfig = new api.default.SubscriberConfig()
         this.request = 'Subscribe'
-        const signals = [];
+        const signals = []
         this.selectedSignals.forEach(signal => {
           if (signal.signalId) {
             signals.push(signal.signalId)
@@ -394,7 +393,7 @@
         signalIds.setSignalidList(signals)
         // eslint-disable-next-line no-undef
         const clientId = new api.default.ClientId()
-        clientId.setId(this.clientName)
+        clientId.setId(this.clientName())
         this.subsConfig.setSignals(signalIds)
         this.subsConfig.setClientid(clientId)
         this.startStream()
@@ -402,7 +401,10 @@
       startStream () {
         this.stream = this.NetworkService.subscribeToSignals(this.subsConfig)
         this.stream.on('data', response => {
-          this.subscribed = true;
+          if (!this.subscribed
+          ) {
+            this.subscribed = true
+          }
           this.responseArrayBuffer.push(response)
           this.countMessagesPerSecond()
           this.processBuffer()
@@ -410,27 +412,29 @@
           if (this.connectionStatus !== 'success--text') {
             this.connectionStatus = 'success--text'
           }
-        });
+        })
         this.stream.on('end', () => {
           this.stopStream()
-          this.snackbarDisplayed = false;
+          this.snackbarDisplayed = false
         })
         this.stream.on('status', (status) => {
           this.snackbar('info', status.details, 'info')
         })
         this.stream.on('error', (error) => {
-          this.stopStream();
-          //  this.snackbar('error', error.message, 'warning')
-          this.connectionStatus = 'error--text'
+          if (error) {
+            this.stopStream()
+            //  this.snackbar('error', error.message, 'warning')
+            this.connectionStatus = 'error--text'
+          }
         })
         // this.$store.commit('updateRequestHistory', this.requestHistory)
       },
       stopStream () {
-        this.request = 'Cancel Subscription';
+        this.request = 'Cancel Subscription'
         if (this.stream) {
           this.stream.cancel()
         }
-        this.subscribed = false;
+        this.subscribed = false
         // this.$store.commit('updateRequestHistory', this.requestHistory)
       },
       countMessagesPerSecond () {
@@ -442,6 +446,29 @@
         }
         this.messagesPerSecond += 1
       },
+      activityMonitor (signalList) {
+        this.responseArray.length = 0
+        signalList.forEach(signal => {
+          const name = signal.getId().getName()
+          const nameSpace = signal.getId().getNamespace()
+            .getName()
+          this.responseArray.push({ name: name, namespace: nameSpace })
+        })
+      },
+      initializeSignalList () {
+        this.selectedSignals.forEach(signal => {
+          const newElement = {
+            name: signal.name,
+            dataRecords: [],
+            dataType: 'Empty',
+            nameSpace: signal.namespace,
+            highlight: false,
+            rawData: [],
+            isParent: signal.isParent,
+          }
+          this.signalDataListBuffer.push(newElement)
+        })
+      },
       processBuffer () {
         const now = Date.now()
         if (this.deltaTimeProcessBuffer + (1000 / this.childMessagesPerSecond) < now) {
@@ -449,9 +476,14 @@
           this.responseArrayBuffer.forEach(cachedResponses => {
             this.processCachedResponses(cachedResponses)
           })
-          this.responseArrayBuffer = []
+          this.responseArrayBuffer.length = 0
           this.signalDataList = this.signalDataListBuffer.slice(0)
-          this.signalDataListBuffer = []
+          // this.signalDataListBuffer.forEach(signal => {
+          //   signal.dataRecords.length = 0
+          //   signal.rawData.length = 0
+          // })
+          this.signalDataListBuffer.length = 0
+          this.initializeSignalList()
         }
       },
       processCachedResponses (response) {
@@ -465,32 +497,19 @@
           this.firstRun = false
         }
       },
-      activityMonitor (signalList) {
-        this.responseArray = []
-        signalList.forEach(signal => {
-          const name = signal.getId().getName()
-          const nameSpace = signal.getId().getNamespace()
-            .getName()
-          this.responseArray.push({ name: name, namespace: nameSpace })
-        })
-      },
       createSignalList (signalList) {
         signalList.forEach(signal => {
           const name = signal.getId().getName()
           const nameSpace = signal.getId().getNamespace()
             .getName()
-          const index = this.signalDataListBuffer.findIndex(signalElement => { return signalElement.name === name && signalElement.nameSpace === nameSpace })
-          let signalData = ''
-          let rawData
           let dataType = ''
-          let isParent = false
-          rawData = signal.getRaw_asU8()
-          if (signal.hasDouble()) {
-            signalData = signal.getDouble()
-            dataType = 'Double'
-          } else if (signal.hasInteger()) {
+          let signalData = ''
+          if (signal.hasInteger()) {
             signalData = signal.getInteger()
             dataType = 'Integer'
+          } else if (signal.hasDouble()) {
+            signalData = signal.getDouble()
+            dataType = 'Double'
           } else if (signal.hasArbitration()) {
             signalData = signal.getArbitration()
             dataType = 'Arbitration'
@@ -498,6 +517,9 @@
             signalData = signal.getEmpty()
             dataType = 'Empty'
           }
+          let rawData
+          rawData = signal.getRaw_asU8()
+          let isParent = false
           if (rawData.length > 7) {
             dataType = 'RAW'
             isParent = true
@@ -512,16 +534,16 @@
             rawData: [{ timestamp: timestamp, data: rawData }],
             isParent: isParent,
           }
-          if (index !== -1) { // if the element is found, then push new data records, else push the new element
-            let dataListItem = this.signalDataListBuffer[index]
-            dataListItem.dataRecords.push({ timestamp: timestamp, data: signalData })
-            dataListItem.rawData.push({ timestamp: timestamp, data: rawData })
-            dataListItem.isParent = isParent
-            dataListItem.name = name
-          } else {
+          const index = this.signalDataListBuffer.findIndex(signalElement => { return signalElement.name === name && signalElement.nameSpace === nameSpace })
+          if (index === -1) {
             this.signalDataListBuffer.push(newElement)
+          } else { // if the element is found, then push new data records
+            const updatingSignal = this.signalDataListBuffer[index]
+            updatingSignal.dataRecords.push(...newElement.dataRecords)
+            updatingSignal.rawData.push(...newElement.rawData)
+            if (updatingSignal.dataType !== newElement.dataType) { updatingSignal.dataType = newElement.dataType }
           }
-        });
+        })
       },
     },
   }
@@ -531,7 +553,7 @@
 .overflowY {
   overflow-x: hidden;
   overflow-y: auto;
-  max-height: calc(86vh - 300px);
+  max-height: calc(86vh - 200px);
 }
 .marginToolbar {
   margin-top: -64px;
