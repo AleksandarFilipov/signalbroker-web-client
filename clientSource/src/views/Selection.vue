@@ -293,6 +293,7 @@
                   <template v-slot:activator="{on}">
                     <VBtn
                       color="success"
+                      :disabled="presetName === ''"
                       depressed
                       v-on="on"
                       @click="savePreset"
@@ -333,14 +334,13 @@
               hide-actions
               hide-details
               class="ml-3 mb-3"
-              label="Export/Import Presets"
+              label="Import/Export Presets"
             />
             <VTooltip bottom>
               <template v-slot:activator="{on}">
                 <VBtn
                   class="mx-3"
                   flat
-                  icon
                   large
                   v-on="on"
                   @click="savePresets"

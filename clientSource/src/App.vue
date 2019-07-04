@@ -329,6 +329,7 @@
           return this.$store.state.brokerServerIp
         },
         set (value) {
+          localStorage.setItem('signalBrokerEnvoyIP', value)
           this.$store.commit('updateBrokerServerIp', value)
         },
       },
@@ -420,6 +421,12 @@
           this.$store.commit('updatePrimaryDrawerDense', value)
         },
       },
+    },
+    mounted () {
+      const envoyIP = localStorage.getItem('signalBrokerEnvoyIP')
+      if (envoyIP !== null) {
+        this.brokerServerIp = envoyIP
+      }
     },
   }
 </script>

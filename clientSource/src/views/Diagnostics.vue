@@ -408,6 +408,9 @@
               </span>
             </span>
           </td>
+          <td>
+            {{ props.item.description }}
+          </td>
         </tr>
       </template>
       <template v-slot:expand="props">
@@ -567,6 +570,13 @@
             class: 'grow',
             align: 'left',
             sortable: true,
+          },
+          {
+            text: 'Description',
+            value: 'description',
+            class: 'grow',
+            align: 'left',
+            sortable: false,
           },
         ],
       }
