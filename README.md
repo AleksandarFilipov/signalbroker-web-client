@@ -29,6 +29,22 @@ SIGNAL_SERVER_HOST_NAME=10.251.177.205 iex -S mix
 Envoy must be running and should be connected to the Signal Broker Server.
 Check [readme](configuration/grpc_web/README.md) on how to get started.
 
+## Alternatively; start using docker
+
+```bash
+docker build -t signalbroker-web-client:v1 -f ./docker/Dockerfile .
+```
+
+
+just start it using the correct ip. Remember don't use 127.0.0.1, instead use the **real** signalbroker machine ip
+```bash
+docker run -e SIGNAL_SERVER_HOST_NAME='192.168.1.169' --rm -it -p 8080:8080 signalbroker-web-client:v1
+```
+
+note 1: you should be able to do above on intel or arm. However ARM is not testad at this point.
+
+quick test, the mini web sample should now work if you follow the instructions *Websocket Web Client* found below
+
 # Run the gRPC front-end web client
 Point your browser to [http://you_envoy_machine_ip:8080/](http://localhost:8080/). You will be notified that the Signal Broker Envoy is offline. This is because you need to specify the correct IP according to your configurations. Click the red field in the status bar at the bottom which reads "Signal Broker Envoy". Configure it by setting your Envoy IP, http://[your_envoy_server]:8081
 
@@ -58,3 +74,6 @@ The API is simply the same as the [telnet API](https://github.com/volvo-cars/sig
 
 
 For a working sample of how to use the code go to `priv/websocket_demo/js/web_car.js`.
+
+## TODO - help appreciated
+- [ ] add envoy to the docker image, alternatively use docker compose.
