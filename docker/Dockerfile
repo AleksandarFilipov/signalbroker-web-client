@@ -59,4 +59,4 @@ WORKDIR /service_client
 COPY --from=build-env service_client/_build ./_build/
 COPY --from=build-env service_client/configuration ./_build/prod/rel/signal_server/configuration/
 
-ENTRYPOINT ["_build/prod/rel/signal_server/bin/signal_server", "console"]
+ENTRYPOINT ["_build/prod/rel/service_client/bin/service_client", "console"]
