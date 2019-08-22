@@ -29,6 +29,29 @@ SIGNAL_SERVER_HOST_NAME=10.251.177.205 iex -S mix
 Envoy must be running and should be connected to the Signal Broker Server.
 Check [readme](configuration/grpc_web/README.md) on how to get started.
 
+## Alternatively; start using docker
+
+```bash
+docker build -t signalbroker-web-client:v1 -f ./docker/Dockerfile .
+```
+
+
+to run with your configuration:
+```bash
+docker run --rm -it --privileged=true --net=host -p 4040:4040 -p 50051:50051 -v $PWD/configuration/:/signalbroker/_build/prod/rel/signal_server/configuration signalbroker:v1
+```
+
+or run it with sample configuration:
+```bash
+docker run --rm -it -p 4040:4040 -p 50051:50051 signalbroker:v1
+
+```
+
+note 1: mac doesn't have socketcan so you can omit `--net=host`
+
+note 2: you should be able to do above on intel or arm. However ARM is not testad at this point.
+
+
 # Run the gRPC front-end web client
 Point your browser to [http://you_envoy_machine_ip:8080/](http://localhost:8080/). You will be notified that the Signal Broker Envoy is offline. This is because you need to specify the correct IP according to your configurations. Click the red field in the status bar at the bottom which reads "Signal Broker Envoy". Configure it by setting your Envoy IP, http://[your_envoy_server]:8081
 
