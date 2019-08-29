@@ -1,21 +1,18 @@
 ## Run envoy
-from the docker folder
+from the docker folder.
 ```bash
-sudo -E  docker build -t envoy:v1 .
+sudo -E docker build --build-arg SIGNAL_SERVER_HOST_NAME=127.0.0.1 -t envoy:v1 .
 ```
 start it
 ```bash
 sudo docker run  -p 8080:8080 --net=host  envoy:v1
 ```
+SIGNAL_SERVER_HOST_NAME should point to the machine where [signalbroker-server](https://github.com/volvo-cars/signalbroker-server) is hosted
+
 ## Start using the system
 
-- Run the pre built [fronend, that is; iex -S mix](/README.md)
+- Run the pre built [frontend, that is; iex -S mix](/README.md)
 - Alternatively use the [generated](/configuration/grpc_web/generated) js files to access the grpc server using your web code.
-
-## Optionally, re-configure ip address, if envoy is running on "other machine"
-Change 127.0.0.1 [in configuration file](/configuration/grpc_web/docker/envoy.yaml) to point to the machine where [signalbroker-server](https://github.com/volvo-cars/signalbroker-server) so that it points to the machine on which the [signalbroker](https://github.com/volvo-cars/signalbroker-server) is running.
-
-Then redo the docker build and docker run flow as described above
 
 ### Reference, re-generate gRPC-web js files
 
