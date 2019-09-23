@@ -45,6 +45,14 @@ note 1: you should be able to do above on intel or arm. However ARM is not testa
 
 quick test, the mini web sample should now work if you follow the instructions *Websocket Web Client* found below
 
+## Docker compose
+
+If you built the container described above and the additional container [here](configuration/grpc_web/README.md) you can conveniently start the container from this folder by doing
+```bash
+SIGNAL_SERVER_HOST_NAME=192.168.1.169 docker-compose up
+```
+make sure to use your host ip instead of 192.168.1.169
+
 # Run the gRPC front-end web client
 Point your browser to [http://you_envoy_machine_ip:8080/](http://localhost:8080/). You will be notified that the Signal Broker Envoy is offline. This is because you need to specify the correct IP according to your configurations. Click the red field in the status bar at the bottom which reads "Signal Broker Envoy". Configure it by setting your Envoy IP, http://[your_envoy_server]:8081
 
