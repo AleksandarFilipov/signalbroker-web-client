@@ -1,11 +1,11 @@
 ## Run envoy
 from the docker folder.
 ```bash
-sudo -E docker build --build-arg SIGNAL_SERVER_HOST_NAME=127.0.0.1 -t envoy:v1 .
+docker build --build-arg SIGNAL_SERVER_HOST_NAME=127.0.0.1 -t envoy:v1 .
 ```
 start it
 ```bash
-sudo docker run  -p 8080:8080 --net=host  envoy:v1
+docker run -p 8081:8081 envoy:v1
 ```
 SIGNAL_SERVER_HOST_NAME should point to the machine where [signalbroker-server](https://github.com/volvo-cars/signalbroker-server) is hosted
 
