@@ -1,9 +1,9 @@
 ## Run envoy
-from the docker folder.
+clone the repository then go to this docker folder [/configuration/grpc_web/docker](/configuration/grpc_web/docker) and run
 ```bash
 docker build --build-arg SIGNAL_SERVER_HOST_NAME=127.0.0.1 -t envoy:v1 .
 ```
-start it
+unless you intend to start it with [docker compose](/README.md#docker-compose) you could, start it
 ```bash
 docker run -p 8081:8081 envoy:v1
 ```
