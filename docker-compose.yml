@@ -3,6 +3,9 @@ services:
   web-client:
     stdin_open: true
     tty: true
+    build:
+      context: ./
+      dockerfile: docker/Dockerfile
     image: signalbroker-web-client:v1
     environment:
       SIGNAL_SERVER_HOST_NAME: ${SIGNAL_SERVER_HOST_NAME}
@@ -11,8 +14,25 @@ services:
   envoy:
     stdin_open: true
     tty: true
-    image: envoy:v1
-    environment:
-      SIGNAL_SERVER_HOST_NAME: ${SIGNAL_SERVER_HOST_NAME}
+    # build:
+    #   context: ./configuration/grpc_web/docker
+    #   dockerfile: Dockerfile
+    #   args:
+    #     - "SIGNAL_SERVER_HOST_NAME=127.0.0.1"
+    # image: envoy:v1
+    image: envoyproxy/envoy:latest
+    command: /usr/local/bin/envoy -c /etc/envoy.yaml 
+    volumes:
+      - ./configuration/grpc_web/docker/envoy.yaml:/etc/envoy.yaml 
+    # environment:
+      # SIGNAL_SERVER_HOST_NAME: "signal-broker"
     ports:
      - "8081:8081"
+
+  proxy:
+    stdin_open: true
+    tty: true
+    image: mozgiii/docker-grpcwebproxy
+    ports:
+      - "8082:8080"
+    command: ["/grpcwebproxy", "--backend_addr=docker.for.mac.localhost:50051", "--run_tls_server=false"]
