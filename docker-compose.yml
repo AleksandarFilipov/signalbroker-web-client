@@ -2,11 +2,9 @@ version: '3.2'
 services:
   web-client:
     build:
-      context: ./
-      dockerfile: docker/Dockerfile
+      context: ./clientSource
+      dockerfile: ../docker/yarn.Dockerfile
     image: signalbroker-web-client:v1
-    environment:
-      SIGNAL_SERVER_HOST_NAME: ${SIGNAL_SERVER_HOST_NAME}
     ports:
      - "8080:8080"
   envoy:
