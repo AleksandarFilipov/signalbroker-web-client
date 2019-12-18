@@ -14,7 +14,7 @@ services:
       - ./configuration/grpc_web/docker/envoy.yaml:/etc/envoy.yaml 
     ports:
      - "8081:8081"
-
+     - "9901:9901"
   proxy:
     stdin_open: true
     tty: true
