@@ -16,9 +16,10 @@ services:
      - "8081:8081"
      - "9901:9901"
   proxy:
-    stdin_open: true
-    tty: true
-    image: mozgiii/docker-grpcwebproxy
+    build:
+      context: ./docker
+      dockerfile: grpcwebproxy.Dockerfile
+    image: grpcwebproxy
     ports:
       - "8082:8080"
-    command: ["/grpcwebproxy", "--backend_addr=docker.for.mac.localhost:50051", "--run_tls_server=false"]
+    command: ./grpcwebproxy --backend_addr=${SIGNALBROKER_IP:?Add SIGNALBROKER_IP to the .env file}:50051 --run_tls_server=false --allow_all_origins --server_http_max_read_timeout 0s --server_http_max_write_timeout 0s
