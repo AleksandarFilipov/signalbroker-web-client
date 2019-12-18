@@ -7,6 +7,8 @@ services:
     image: signalbroker-web-client:v1
     ports:
      - "8080:8080"
+    depends_on:
+     - proxy
   envoy:
     image: envoyproxy/envoy:latest
     command: /usr/local/bin/envoy -c /etc/envoy.yaml 
