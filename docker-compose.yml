@@ -9,14 +9,14 @@ services:
      - "8080:8080"
     depends_on:
      - proxy
-  envoy:
-    image: envoyproxy/envoy:latest
-    command: /usr/local/bin/envoy -c /etc/envoy.yaml 
-    volumes:
-      - ./configuration/grpc_web/docker/envoy.yaml:/etc/envoy.yaml 
-    ports:
-     - "8081:8081"
-     - "9901:9901"
+  # envoy:
+  #   image: envoyproxy/envoy:latest
+  #   command: /usr/local/bin/envoy -c /etc/envoy.yaml 
+  #   volumes:
+  #     - ./configuration/grpc_web/docker/envoy.yaml:/etc/envoy.yaml 
+  #   ports:
+  #    - "8081:8081"
+  #    - "9901:9901"
   proxy:
     build:
       context: ./docker
