@@ -69,25 +69,53 @@
               </VSheet>
               <VDivider class="hidden-md-and-up" />
               <VSheet
-                v-if="signalSelectionItems.length === 1"
+                v-if="signalSelectionItems.length > 0"
+                ref="signal-list"
                 class="overflowY
                  py-4
                  pl-4
                  "
               >
+                <!--
                 <VExpandTransition>
-                  <VTreeview
-                    v-model="selectedSignalsLocal"
-                    :search="search"
-                    itemid="id"
-                    :items="signalSelectionItems"
-                    selectable
-                    transition
-                    :open.sync="treeOpenItems"
-                    return-object
-                    @input="selectSignals"
-                  />
+                <VTreeview
+                  itemid="id"
+                  :items="filteredSignals.slice(0,100)"
+                  selectable
+                  transition
+                  :open.sync="treeOpenItems"
+                  return-object
+                  open-all
+                  loading-icon="search"
+                  @input="selectSignals"
+                />
+                -->
+                <VirtualList
+                  :size="52"
+                  :remain="10"
+                >
+                  <div
+                    v-for="(signal, index) in filteredSignals"
+                    :key="index"
+                    name="000"
+                    class="d-flex"
+                  >
+                    <div>
+                      <VCheckbox
+                        :name="index"
+                        :input-value="signalIsSelected(signal.id)"
+                        class="mx-2 my-1"
+                        :label="signal.name"
+                        :messages="signal.namespace"
+                        @change="selectSignals(signal)"
+                      />
+                    </div>
+                    <span class="description">{{ signal.name }}</span>
+                  </div>
+                </VirtualList>
+                <!--
                 </VExpandTransition>
+                -->
               </VSheet>
               <VCardText
                 v-else
@@ -128,27 +156,24 @@
               class="px-3 pb-5 pt-3 overflowY2"
             >
               <span
-                v-for="(selection, index) in selectedSignalsChip"
+                v-for="(selection, index) in selectedSignalsLocal"
                 :key="index"
               >
                 <VSpacer
-                  v-if="selection.isParent"
-                  class="my-4"
+                  class="my-2"
                 />
                 <VChip
                   v-ripple
                   small
-                  :label="selection.isParent"
+                  close
                   @input="remove(index)"
                 >
                   {{ selection.name }}
                 </VChip>
                 <span
-                  v-if="selection.isParent"
                   class="caption grey--text"
                 > {{ selection.namespace }}</span>
                 <VSpacer
-                  v-if="selection.isParent"
                   class="my-0"
                 />
               </span>
@@ -182,7 +207,7 @@
               <VTooltip bottom>
                 <template v-slot:activator="{on}">
                   <VBtn
-                    :disabled="selectedSignalsChip === selectedSignals || signalSelectionItems.length === 0"
+                    :disabled="JSON.stringify(selectedSignalsLocal) === JSON.stringify(selectedSignals) || signalSelectionItems.length === 0"
                     color="success"
                     depressed
                     v-on="on"
@@ -200,7 +225,7 @@
               <VTooltip bottom>
                 <template v-slot:activator="{on}">
                   <VBtn
-                    :disabled="selectedSignalsLength === 0 || selectedSignalsChip !== selectedSignals"
+                    :disabled="selectedSignalsLength === 0 || JSON.stringify(selectedSignalsLocal) !== JSON.stringify(selectedSignals)"
                     color="info"
                     depressed
                     to="monitor"
@@ -218,7 +243,7 @@
               <VTooltip bottom>
                 <template v-slot:activator="{on}">
                   <VBtn
-                    :disabled="selectedSignalsLength === 0 || selectedSignalsChip !== selectedSignals"
+                    :disabled="selectedSignalsLength === 0 || JSON.stringify(selectedSignalsLocal) !== JSON.stringify(selectedSignals)"
                     color="info"
                     depressed
                     to="diagnostics"
@@ -236,7 +261,7 @@
               <VTooltip bottom>
                 <template v-slot:activator="{on}">
                   <VBtn
-                    :disabled="selectedSignalsLength === 0 || selectedSignalsChip !== selectedSignals"
+                    :disabled="selectedSignalsLength === 0 || JSON.stringify(selectedSignalsLocal) !== JSON.stringify(selectedSignals)"
                     color="info"
                     depressed
                     to="publish"
@@ -391,14 +416,15 @@
 </template>
 <script>
   import './../grpc/dist/api.js'
+  import virtualList from 'vue-virtual-scroll-list'
   export default {
+    components: { 'VirtualList': virtualList },
     data: () => {
       return {
         request: '',
         snackbarDisplayed: false,
         treeOpenItems: [],
         selectedSignalsLocal: [],
-        selectedSignalsChip: [],
         snackbarMessage: 'Not connected',
         snackbarIcon: 'warning',
         snackbarUrl: '',
@@ -408,6 +434,11 @@
       }
     },
     computed: {
+      filteredSignals () {
+        return this.signalSelectionItems.filter((signal) => {
+          return signal.id.toLowerCase().includes(this.search ? this.search.toLowerCase() : '')
+        })
+      },
       selectedSignalsLength () {
         return this.selectedSignals.length
       },
@@ -477,7 +508,18 @@
       this.savePresets()
     },
     methods: {
+      deepCopyArrOfObjects (arr) {
+        return arr.map(obj => {
+          return JSON.parse(JSON.stringify(obj))
+        })
+      },
+      signalIsSelected (id) {
+        return this.selectedSignalsLocal.filter(signal => {
+          return signal.id === id
+        }).length
+      },
       remove (index) {
+        this.selectedSignalsLocal = this.selectedSignalsLocal.slice(0, index).concat(this.selectedSignalsLocal.slice(index + 1))
         this.retrievedStorage.presets.splice(index, 1)
         this.updatePresetState()
       },
@@ -526,8 +568,17 @@
         })
         this.treeOpenItems = resultingArray
       },
-      selectSignals () {
-        this.selectedSignalsChip = this.selectedSignalsLocal
+      // Checkbox changed in the signal view
+      selectSignals (signal) {
+        if (!signal) return
+        if (this.selectedSignalsLocal.filter(localSignal => {
+          return signal.id === localSignal.id
+        }).length) {
+          const indexOfSignal = this.selectedSignalsLocal.map(s => { return s.id }).indexOf(signal.id)
+          this.selectedSignalsLocal = this.selectedSignalsLocal.slice(0, indexOfSignal).concat(this.selectedSignalsLocal.slice(indexOfSignal + 1))
+        } else {
+          this.selectedSignalsLocal = [...this.deepCopyArrOfObjects(this.selectedSignalsLocal), JSON.parse(JSON.stringify(signal))]
+        }
       },
       clear () {
         // this.search = null;
@@ -552,7 +603,7 @@
         }
       },
       saveSignalState () {
-        this.selectedSignals = this.selectedSignalsChip
+        this.selectedSignals = this.deepCopyArrOfObjects(this.selectedSignalsLocal)
       },
       fetchLists () {
         this.request = 'Fetch lists'
@@ -567,31 +618,16 @@
           if (this.connectionStatus !== 'success--text') {
             this.connectionStatus = 'success--text'
           }
-          this.populateParents(response.getNetworkinfoList())
+          response.getNetworkinfoList().forEach(namespace => {
+            this.listNamespaceSignals(namespace)
+          })
         } else if (err) {
           this.snackbar('error--text', 'The broker envoy is offline.', 'https://github.com/volvo-cars/signalbroker-web-client/tree/master/configuration/grpc_web')
         }
       },
-      populateParents (namespaceList) {
-        let globalIndex = 0
-        const signals = {
-          id: 'Signal Buses',
-          name: 'Signal Buses',
-          children: [],
-        }
-        namespaceList.forEach(list => {
-          const exportedChild = {
-            id: list.getNamespace().getName() + globalIndex,
-            name: list.getNamespace().getName(),
-            children: this.listNamespaceSignals(list),
-          }
-          globalIndex += 1
-          signals.children.push(exportedChild)
-        })
-        this.signalSelectionItems = [signals]
-      },
       listNamespaceSignals (namespaceName) {
         const frameGroup = []
+        const signalIds = {}
         const parentName = namespaceName.getNamespace().getName()
         this.request = 'Fetch signals'
         // eslint-disable-next-line no-undef
@@ -603,18 +639,22 @@
           this.connectionStatus = 'success--text'
         }
         this.requestHistory.push({ date: Date.now(), request: this.request, response: 'List signals' })
-        SystemService.listSignals(request, {}, function listSignalsCallback (err, response) {
+        SystemService.listSignals(request, {}, (err, response) => {
           if (response) {
             let childIndex = 0
             const frames = response.getFrameList()
             frames.forEach(frame => {
-              const frameMetaData = frame.getSignalinfo().getMetadata()
+              // const frameMetaData = frame.getSignalinfo().getMetadata()
               const frameSignalId = frame.getSignalinfo().getId()
-              const frameName = frameSignalId
-                .getName()
+              // eslint-disable-next-line
+              // debugger
+              // const frameName = frameSignalId
+              //  .getName()
               const frameChildInfo = frame.getChildinfoList()
-              const frameChildGroup = []
+              // const frameChildGroup = []
               frameChildInfo.forEach(frameChild => {
+                // eslint-disable-next-line
+                // debugger
                 const frameChildSignalId = frameChild.getId()
                 const frameChildMetaData = frameChild.getMetadata()
                 const frameChildName = frameChildSignalId.getName()
@@ -630,10 +670,19 @@
                   unit: frameChildMetaData.getUnit(),
                   description: frameChildMetaData.getDescription(),
                   isParent: false,
+                  frameSignalId,
                 }
+                // eslint-disable-next-line
+                // debugger
                 childIndex += 1
-                frameChildGroup.push(frameChildLabel)
+                // frameChildGroup.push(frameChildLabel)
+                if (!signalIds[frameChildLabel.signalId]) {
+                  signalIds[frameChildLabel.signalId] = true
+                  frameGroup.push(frameChildLabel)
+                }
+                // frameGroup.push(frameChildLabel)
               })
+              /*
               frameGroup.push({
                 id: parentName + frameName + childIndex,
                 name: frameName,
@@ -648,13 +697,15 @@
                 isParent: true,
               })
               childIndex += 1
+              */
             })
           }
           if (err) {
             console.log('error', err)
+          } else {
+            this.signalSelectionItems = [...this.deepCopyArrOfObjects(this.signalSelectionItems), ...this.deepCopyArrOfObjects(frameGroup)]
           }
         })
-        return frameGroup
       },
     },
   }
@@ -675,5 +726,11 @@
 }
 .tree {
   overflow-x: visible;
+}
+.description {
+  color: #bbb;
+  font-size: 12px;
+  text-align: right;
+  padding-top: 8px;
 }
 </style>

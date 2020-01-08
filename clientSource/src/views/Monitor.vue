@@ -384,23 +384,34 @@
         this.request = 'Subscribe'
         const signals = []
         this.selectedSignals.forEach(signal => {
-          if (signal.signalId) {
-            signals.push(signal.signalId)
-          }
+          // eslint-disable-next-line no-undef
+          const ns = new api.default.NameSpace()
+          ns.setName(signal.namespace)
+          // eslint-disable-next-line no-undef
+          const s = new api.default.SignalId()
+          s.setName(signal.name)
+          s.setNamespace(ns)
+          signals.push(s)
         })
         // eslint-disable-next-line no-undef
         const signalIds = new api.default.SignalIds()
         signalIds.setSignalidList(signals)
+        // signalIds.setSignalIds()
         // eslint-disable-next-line no-undef
         const clientId = new api.default.ClientId()
         clientId.setId(this.clientName())
         this.subsConfig.setSignals(signalIds)
         this.subsConfig.setClientid(clientId)
+        this.subsConfig.setOnchange(true)
+        // eslint-disable-next-line
+        // debugger
         this.startStream()
       },
       startStream () {
         this.stream = this.NetworkService.subscribeToSignals(this.subsConfig)
         this.stream.on('data', response => {
+          // eslint-disable-next-line
+          // debugger
           if (!this.subscribed
           ) {
             this.subscribed = true
@@ -421,6 +432,8 @@
           this.snackbar('info', status.details, 'info')
         })
         this.stream.on('error', (error) => {
+          // eslint-disable-next-line
+          debugger
           if (error) {
             this.stopStream()
             //  this.snackbar('error', error.message, 'warning')

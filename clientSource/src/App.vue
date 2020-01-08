@@ -446,4 +446,10 @@
   font-size: 1.4rem;
   letter-spacing: 1.01px;
 }
+.v-input__control .v-messages__wrapper .v-messages__message {
+  padding-left: 32px;
+}
+.v-input--checkbox .v-input__control .v-input__slot {
+  margin-bottom: 4px;
+}
 </style>
