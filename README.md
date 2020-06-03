@@ -2,13 +2,13 @@
 
 This project contains two things
 
-- Web frontend interface for [signalbroker](https://github.com/volvo-cars/signalbroker-server) implemented using gRPC-Web
+- Web frontend interface for [signalbroker](https://github.com/AleksandarFilipov/signalbroker-server) implemented using gRPC-Web
 - Exposes websocket interface enabling simpler js applications. Sample is included.
 
 # Prerequisites
 ## Signal Broker
 
-Before starting, the [signalbroker](https://github.com/volvo-cars/signalbroker-server) must be running.
+Before starting, the [signalbroker](https://github.com/AleksandarFilipov/signalbroker-server) must be running.
 
 - [Install elixir](https://elixir-lang.org/install.html).
 - Clone this repository.
@@ -78,7 +78,7 @@ To access the *Websocket client* UI point your web browser to http://localhost:8
 
 ## Websocket API
 
-The API is simply the same as the [telnet API](https://github.com/volvo-cars/signalbroker-server/blob/master/apps/app_telnet/README.md) but sent over websocket.
+The API is simply the same as the [telnet API](https://github.com/AleksandarFilipov/signalbroker-server/blob/master/apps/app_telnet/README.md) but sent over websocket.
 
 
 For a working sample of how to use the code go to `priv/websocket_demo/js/web_car.js`.
